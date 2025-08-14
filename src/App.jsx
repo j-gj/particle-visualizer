@@ -7,33 +7,14 @@ import { useThree } from '@react-three/fiber'
 export default function App() {
   // Read URL parameters
   const urlParams = new URLSearchParams(window.location.search)
-  const themeFromUrl = urlParams.get('theme') // 'light' or 'dark'
-  const bgColorFromUrl = urlParams.get('bg') // hex color without #
+  const bgFromUrl = urlParams.get('bg')
+  const gc1FromUrl = urlParams.get('gc1')
+  const gc2FromUrl = urlParams.get('gc2')
+  const gc3FromUrl = urlParams.get('gc3')
+  const gc4FromUrl = urlParams.get('gc4')
 
-  // Set background based on theme
-  const getBackgroundColor = () => {
-    if (bgColorFromUrl) return `#${bgColorFromUrl}`
-    return themeFromUrl === 'light' ? '#ffffff' : '#000000'
-  }
-  
-  // Set particle colors based on theme
-  const getParticleColors = () => {
-    if (themeFromUrl === 'light') {
-      return {
-        gradientColor1: '#0B85F8',
-        gradientColor2: '#637AFF',
-        gradientColor3: '#372CD5',
-        gradientColor4: '#0B85F8'
-      }
-    }
-    // Dark theme colors
-    return {
-      gradientColor1: '#0B85F8',
-      gradientColor2: '#637AFF', 
-      gradientColor3: '#372CD5',
-      gradientColor4: '#0B85F8'
-    }
-  }
+  // Helper function to add # to hex colors
+  const formatHexColor = (color) => color ? `#${color}` : null
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -43,10 +24,13 @@ export default function App() {
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
-    backgroundColor: { value: getBackgroundColor() },
+    backgroundColor: { value: formatHexColor(bgFromUrl) || '#000000' },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
     // Gradient controls
-    ...getParticleColors(),
+    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
+    gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
+    gradientColor3: { value: formatHexColor(gc3FromUrl) || '#372CD5' },
+    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#F0F4FF' },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
@@ -59,9 +43,12 @@ export default function App() {
     fov: 35,
     blur: 21,
     focus: 3.45,
-    backgroundColor: '#000000',
+    backgroundColor: formatHexColor(bgFromUrl) || '#000000',
     initialCameraZ: 2.5,
-    ...getParticleColors(),
+    gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
+    gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
+    gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
+    gradientColor4: formatHexColor(gc4FromUrl) || '#F0F4FF',
     gradientStop1: 0.6,
     gradientStop2: 0.65,
     gradientStop3: 0.75,
