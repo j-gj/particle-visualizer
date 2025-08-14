@@ -12,6 +12,7 @@ export default function App() {
   const gc2FromUrl = urlParams.get('gc2')
   const gc3FromUrl = urlParams.get('gc3')
   const gc4FromUrl = urlParams.get('gc4')
+  const transparentBg = urlParams.get('transparent') === 'true'
 
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
@@ -19,12 +20,12 @@ export default function App() {
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const controlValues = isDev ? useControls({
-    frequency: { value: 0.15, min: 0, max: 1,  step: 0.001 },
+    frequency: { value: 0.15, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: 4, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
-    backgroundColor: { value: formatHexColor(bgFromUrl) || '#000000' },
+    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
@@ -43,7 +44,7 @@ export default function App() {
     fov: 35,
     blur: 21,
     focus: 3.45,
-    backgroundColor: formatHexColor(bgFromUrl) || '#000000',
+    backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
@@ -56,7 +57,7 @@ export default function App() {
     gradientRadius: 1.35
   }
 
-  const { 
+  const {
     frequency,
     speedFactor,
     fov,
@@ -75,10 +76,10 @@ export default function App() {
     gradientStop4,
     gradientRadius
   } = controlValues
-  
+
   const { camera, gl } = useThree()
   const controlsRef = useRef()
-  
+
 
   // Handle window resize
   useEffect(() => {
@@ -102,10 +103,20 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize)
   }, [camera, gl])
 
-  // Update background color
+  // Update background color (or make transparent)
   useEffect(() => {
-    document.body.style.background = backgroundColor
-  }, [backgroundColor])
+    if (transparentBg) {
+      document.body.style.background = 'transparent'
+      document.body.style.backgroundColor = 'transparent'
+      // Also make the canvas container transparent
+      const canvas = document.querySelector('canvas')
+      if (canvas && canvas.parentElement) {
+        canvas.parentElement.style.background = 'transparent'
+      }
+    } else {
+      document.body.style.background = backgroundColor
+    }
+  }, [backgroundColor, transparentBg])
 
   // Update camera position when initialCameraZ changes
   useEffect(() => {
@@ -113,12 +124,12 @@ export default function App() {
   }, [initialCameraZ, camera])
 
 
-  
+
   return (
     <>
       <OrbitControls ref={controlsRef} makeDefault autoRotate autoRotateSpeed={1.4} enableZoom={false} />
       <ambientLight />
-      <Particles 
+      <Particles
         frequency={frequency}
         speedFactor={speedFactor}
         fov={fov}
