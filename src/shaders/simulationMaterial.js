@@ -27,8 +27,8 @@ vec4 permute(vec4 x) {
      return mod289(((x*34.0)+1.0)*x);
 }
 
-vec4 taylorInvSqrt(vec4 x) {
-  return 1.79284291400159 - 0.85373472095314 * x;
+vec4 taylorInvSqrt(vec4 r) {
+  return 1.79284291400159 - 0.85373472095314 * r;
 }
 
 float snoise(vec3 v) {
@@ -148,8 +148,8 @@ vec4 permute_c(vec4 x) {
   return mod289_c(((x*34.0)+1.0)*x);
 }
 
-vec4 taylorInvSqrt_c(vec4 x) {
-  return 1.79284291400159 - 0.85373472095314 * x;
+vec4 taylorInvSqrt_c(vec4 r) {
+  return 1.79284291400159 - 0.85373472095314 * r;
 }
 
 vec3 fade(vec3 t) {
