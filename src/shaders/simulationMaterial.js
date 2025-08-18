@@ -239,7 +239,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
     super({
       uniforms: {
         positions: { value: positionsTexture },
-        uDensity: { value: 0.25 },
+        uFrequency: { value: 0.25 },
         uTime: { value: 0 }
       },
       vertexShader: `
@@ -252,7 +252,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
       fragmentShader: `
         precision mediump float;
         uniform float uTime;
-        uniform float uDensity;
+        uniform float uFrequency;
         uniform sampler2D positions;
         varying vec2 vUv;
         
@@ -266,11 +266,11 @@ class SimulationMaterial extends THREE.ShaderMaterial {
           vec3 pos = texture2D(positions, vUv).rgb;
           vec3 curlPos = texture2D(positions, vUv).rgb;
 
-          pos = curlNoise(pos * uDensity + time);
-          curlPos = curlNoise(curlPos * uDensity + time);
-          curlPos += curlNoise(curlPos * uDensity * 2.0) * 0.5;
-          curlPos += curlNoise(curlPos * uDensity * 4.0) * 0.25;
-          curlPos += curlNoise(curlPos * uDensity * 8.0) * 0.125;
+          pos = curlNoise(pos * uFrequency + time);
+          curlPos = curlNoise(curlPos * uFrequency + time);
+          curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
+          curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
+          curlPos += curlNoise(curlPos * uFrequency * 8.0) * 0.125;
           
           gl_FragColor = vec4(mix(pos, curlPos, cnoise(pos + time)), 1.0);
         }
