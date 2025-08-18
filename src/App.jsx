@@ -129,7 +129,7 @@ export default function App() {
 
   return (
     <>
-      <OrbitControls ref={controlsRef} makeDefault autoRotate autoRotateSpeed={1.4} enableZoom={false} />
+      <OrbitControls ref={controlsRef} makeDefault autoRotate autoRotateSpeed={0.5} enableZoom={false} />
       <ambientLight />
       <Particles
         frequency={frequency}
