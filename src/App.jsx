@@ -60,7 +60,7 @@ export default function App() {
     focus: 3.45,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
-    rotationSpeed: 0.0, // Much slower rotation speed (was 1.4)
+    rotationSpeed: 0.1, // Much slower rotation speed (was 1.4)
     enableVerticalRotation: enableVRotation,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
