@@ -16,8 +16,8 @@ function hexToRgb(hex) {
 }
 
 export function Particles({ 
-  frequency = 0.2,
-  speedFactor = 50, 
+  density = 0.2,
+  speed = 50, 
   fov = 60, 
   blur = 30, 
   focus = 5,
@@ -97,10 +97,10 @@ export function Particles({
     renderRef.current.uniforms.uTime.value = clock.elapsedTime;
     
     // Update simulation material
-    simRef.current.uniforms.uTime.value = clock.elapsedTime * speedFactor
-    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(
-      simRef.current.uniforms.uFrequency.value, 
-      frequency, 
+    simRef.current.uniforms.uTime.value = clock.elapsedTime * speed
+    simRef.current.uniforms.uDensity.value = THREE.MathUtils.lerp(
+      simRef.current.uniforms.uDensity.value, 
+      density, 
       0.1
     )
   })

@@ -27,8 +27,8 @@ vec4 permute(vec4 x) {
      return mod289(((x*34.0)+1.0)*x);
 }
 
-vec4 taylorInvSqrt(vec4 r) {
-  return 1.79284291400159 - 0.85373472095314 * r;
+vec4 taylorInvSqrt(vec4 x) {
+  return 1.79284291400159 - 0.85373472095314 * x;
 }
 
 float snoise(vec3 v) {
@@ -148,8 +148,8 @@ vec4 permute_c(vec4 x) {
   return mod289_c(((x*34.0)+1.0)*x);
 }
 
-vec4 taylorInvSqrt_c(vec4 r) {
-  return 1.79284291400159 - 0.85373472095314 * r;
+vec4 taylorInvSqrt_c(vec4 x) {
+  return 1.79284291400159 - 0.85373472095314 * x;
 }
 
 vec3 fade(vec3 t) {
@@ -239,7 +239,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
     super({
       uniforms: {
         positions: { value: positionsTexture },
-        uFrequency: { value: 0.25 },
+        uDensity: { value: 0.25 },
         uTime: { value: 0 }
       },
       vertexShader: `
@@ -252,7 +252,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
       fragmentShader: `
         precision mediump float;
         uniform float uTime;
-        uniform float uFrequency;
+        uniform float uDensity;
         uniform sampler2D positions;
         varying vec2 vUv;
         
@@ -266,11 +266,11 @@ class SimulationMaterial extends THREE.ShaderMaterial {
           vec3 pos = texture2D(positions, vUv).rgb;
           vec3 curlPos = texture2D(positions, vUv).rgb;
 
-          pos = curlNoise(pos * uFrequency + time);
-          curlPos = curlNoise(curlPos * uFrequency + time);
-          curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
-          curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
-          curlPos += curlNoise(curlPos * uFrequency * 8.0) * 0.125;
+          pos = curlNoise(pos * uDensity + time);
+          curlPos = curlNoise(curlPos * uDensity + time);
+          curlPos += curlNoise(curlPos * uDensity * 2.0) * 0.5;
+          curlPos += curlNoise(curlPos * uDensity * 4.0) * 0.25;
+          curlPos += curlNoise(curlPos * uDensity * 8.0) * 0.125;
           
           gl_FragColor = vec4(mix(pos, curlPos, cnoise(pos + time)), 1.0);
         }

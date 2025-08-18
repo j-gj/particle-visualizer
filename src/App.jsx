@@ -12,6 +12,8 @@ export default function App() {
   const gc2FromUrl = urlParams.get('gc2')
   const gc3FromUrl = urlParams.get('gc3')
   const gc4FromUrl = urlParams.get('gc4')
+  const densityFromUrl = urlParams.get('d')
+  const speedFromUrl = urlParams.get('s')
   const transparentBg = urlParams.get('transparent') === 'true'
 
   // Helper function to add # to hex colors
@@ -20,8 +22,8 @@ export default function App() {
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const controlValues = isDev ? useControls({
-    frequency: { value: 0.15, min: 0, max: 1, step: 0.001 },
-    speedFactor: { value: 4, min: 0.1, max: 100, step: 0.1 },
+    density: { value: densityFromUrl ? parseFloat(densityFromUrl) : 0.15, min: 0, max: 1, step: 0.001 },
+    speed: { value: speedFromUrl ? parseFloat(speedFromUrl) : 4, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
@@ -39,8 +41,8 @@ export default function App() {
     gradientRadius: { value: 1.35, min: 1.35, max: 2, step: 0.01 }
   }) : {
     // Default values for production
-    frequency: 0.15,
-    speedFactor: 4,
+    density: densityFromUrl ? parseFloat(densityFromUrl) : 0.15,
+    speed: speedFromUrl ? parseFloat(speedFromUrl) : 4,
     fov: 35,
     blur: 21,
     focus: 3.45,
@@ -58,8 +60,8 @@ export default function App() {
   }
 
   const {
-    frequency,
-    speedFactor,
+    density,
+    speed,
     fov,
     blur,
     focus,
@@ -130,8 +132,8 @@ export default function App() {
       <OrbitControls ref={controlsRef} makeDefault autoRotate autoRotateSpeed={1.4} enableZoom={false} />
       <ambientLight />
       <Particles
-        frequency={frequency}
-        speedFactor={speedFactor}
+        density={density}
+        speed={speed}
         fov={fov}
         blur={blur}
         focus={focus}
