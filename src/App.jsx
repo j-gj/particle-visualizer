@@ -2,7 +2,7 @@ import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
 import { useEffect, useRef } from 'react'
-import { useThree } from '@react-three/fiber'
+import { useThree, useFrame } from '@react-three/fiber'
 
 export default function App() {
   // Read URL parameters
@@ -15,6 +15,15 @@ export default function App() {
   const densityFromUrl = urlParams.get('d')
   const speedFromUrl = urlParams.get('s')
   const transparentBg = urlParams.get('transparent') === 'true'
+  const rotationVerticalParam = urlParams.get('rotationVertical')
+
+  // Detect if device is mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+  // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
+  const enableVRotation = rotationVerticalParam !== null
+    ? rotationVerticalParam === 'true'
+    : !isMobile // Enable on desktop by default, disable on mobile
 
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
@@ -29,6 +38,9 @@ export default function App() {
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
+    // Add rotation speed control for dev mode
+    rotationSpeed: { value: 0.3, min: 0, max: 5, step: 0.1 },
+    enableVerticalRotation: { value: enableVRotation },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
     gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
@@ -48,6 +60,8 @@ export default function App() {
     focus: 3.45,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
+    rotationSpeed: 0.3, // Much slower rotation speed (was 1.4)
+    enableVerticalRotation: enableVRotation,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
     gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
@@ -67,6 +81,8 @@ export default function App() {
     focus,
     backgroundColor,
     initialCameraZ,
+    rotationSpeed,
+    enableVerticalRotation,
     // New gradient controls
     gradientColor1,
     gradientColor2,
@@ -82,6 +98,13 @@ export default function App() {
   const { camera, gl } = useThree()
   const controlsRef = useRef()
 
+  // Use useFrame to pass delta time to OrbitControls.update()
+  useFrame((state, delta) => {
+    if (controlsRef.current) {
+      // Pass delta time to make autoRotate frame-rate independent
+      controlsRef.current.update(delta)
+    }
+  })
 
   // Handle window resize
   useEffect(() => {
@@ -125,11 +148,20 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
-
-
   return (
     <>
-      <OrbitControls ref={controlsRef} makeDefault autoRotate autoRotateSpeed={0.5} enableZoom={false} />
+      <OrbitControls
+        ref={controlsRef}
+        makeDefault
+        autoRotate={true}
+        autoRotateSpeed={rotationSpeed}
+        enableZoom={false}
+        enableDamping={true}
+        dampingFactor={0.05}
+        enableRotate={true}
+        minPolarAngle={enableVRotation ? 0 : Math.PI / 2}
+        maxPolarAngle={enableVRotation ? Math.PI : Math.PI / 2}
+      />
       <ambientLight />
       <Particles
         frequency={frequency}
