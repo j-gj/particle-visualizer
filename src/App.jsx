@@ -14,6 +14,7 @@ export default function App() {
   const gc4FromUrl = urlParams.get('gc4')
   const densityFromUrl = urlParams.get('d')
   const speedFromUrl = urlParams.get('s')
+  const rotationFromUrl = urlParams.get('r')
   const transparentBg = urlParams.get('transparent') === 'true'
   const rotationVerticalParam = urlParams.get('rotationVertical')
 
@@ -27,19 +28,22 @@ export default function App() {
 
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
+  const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
+  const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
+  const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const controlValues = isDev ? useControls({
-    frequency: { value: densityFromUrl ? parseFloat(densityFromUrl) : 0.15, min: 0, max: 1, step: 0.001 },
-    speedFactor: { value: speedFromUrl ? parseFloat(speedFromUrl) : 4, min: 0.1, max: 100, step: 0.1 },
+    frequency: { value: density, min: 0, max: 1, step: 0.001 },
+    speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
     // Add rotation speed control for dev mode
-    rotationSpeed: { value: 0.3, min: 0, max: 5, step: 0.1 },
+    rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
@@ -53,14 +57,14 @@ export default function App() {
     gradientRadius: { value: 1.35, min: 1.35, max: 2, step: 0.01 }
   }) : {
     // Default values for production
-    frequency: densityFromUrl ? parseFloat(densityFromUrl) : 0.15,
-    speedFactor: speedFromUrl ? parseFloat(speedFromUrl) : 4,
+    frequency: density,
+    speedFactor: speed,
     fov: 35,
     blur: 21,
     focus: 3.45,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
-    rotationSpeed: 0.1, // Much slower rotation speed (was 1.4)
+    rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
