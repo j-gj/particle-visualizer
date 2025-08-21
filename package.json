@@ -1,13 +1,6 @@
 {
-  "name": "gpgpu-curl-noise-dof",
+  "name": "particle-visualizer",
   "version": "1.0.0",
-  "description": "Curl noise and depth of field.",
-  "keywords": [
-    "gpu",
-    "shader",
-    "curl",
-    "dof"
-  ],
   "main": "src/index.js",
   "dependencies": {
     "@react-three/drei": "^9.114.0",
