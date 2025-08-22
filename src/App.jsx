@@ -21,9 +21,10 @@ export default function App() {
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const safariSizes = isMobile ? 32 : 64
+  const safariSizes = isMobile ? 128 : 384
   const otherBrowserSizes = isMobile ? 128 : 384
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
+  const shouldRotate = isSafari ? false : true;
   console.log('isSafari', isSafari, 'actualSize', actualSize)
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
@@ -169,7 +170,7 @@ export default function App() {
       <OrbitControls
         ref={controlsRef}
         makeDefault
-        autoRotate={true}
+        autoRotate={shouldRotate}
         autoRotateSpeed={rotationSpeed}
         enableZoom={false}
         enableDamping={true}
