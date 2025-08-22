@@ -173,33 +173,45 @@ export default function App() {
       const startX = canvas.width / 2;
       const startY = canvas.height / 2;
       const endX = startX + 100; // Drag 100 pixels to the right
+      const steps = 20; // Number of move events
+      let currentStep = 0;
 
-      // 1. Dispatch mousedown event
+      // Dispatch the initial mousedown event
       canvas.dispatchEvent(new MouseEvent('mousedown', {
         clientX: startX,
         clientY: startY,
         bubbles: true,
       }));
 
-      // 2. Wait a moment before moving
-      setTimeout(() => {
-        // 3. Dispatch mousemove event
-        canvas.dispatchEvent(new MouseEvent('mousemove', {
-          clientX: endX,
-          clientY: startY,
-          bubbles: true,
-        }));
+      // A function that dispatches a series of mousemove events
+      const move = () => {
+        if (currentStep < steps) {
+          currentStep++;
+          const newX = startX + (endX - startX) * (currentStep / steps);
 
-        // 4. End the drag
-        canvas.dispatchEvent(new MouseEvent('mouseup', {
-          clientX: endX,
-          clientY: startY,
-          bubbles: true,
-        }));
-      }, 100); // 100ms delay to simulate a brief drag
+          canvas.dispatchEvent(new MouseEvent('mousemove', {
+            clientX: newX,
+            clientY: startY,
+            bubbles: true,
+          }));
+
+          // Schedule the next move
+          setTimeout(move, 10); // 10ms delay between steps
+        } else {
+          // Once the movements are complete, end the drag with a mouseup event
+          canvas.dispatchEvent(new MouseEvent('mouseup', {
+            clientX: endX,
+            clientY: startY,
+            bubbles: true,
+          }));
+        }
+      };
+
+      // Start the drag sequence
+      move();
     };
 
-    const timeoutId = setTimeout(simulateDrag, timeoutFromUrl ? parseFloat(timeoutFromUrl) : 1000);
+    const timeoutId = setTimeout(simulateDrag, 1000); // Wait 1 second before starting
     return () => clearTimeout(timeoutId);
   }, []);
 
