@@ -21,15 +21,15 @@ export function Particles({
   fov = 60, 
   blur = 30, 
   focus = 5,
-  size = 256, //use less it's lagging
+  size = 256, //will use what App.jsx gives it
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
   ...props 
 }) {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
-  // console.log('agent', navigator.userAgent, 'actualSize', actualSize)
+  // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  // const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
+  // console.log('agent', navigator.userAgent, 'size', size)
   const simRef = useRef()
   const renderRef = useRef()
   
@@ -39,7 +39,7 @@ export function Particles({
   const [positions] = useState(() => new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0]))
   const [uvs] = useState(() => new Float32Array([0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0]))
   
-  const target = useFBO(actualSize, actualSize, {
+  const target = useFBO(size, size, {
     minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter,
     format: THREE.RGBAFormat,
@@ -49,18 +49,18 @@ export function Particles({
   
   // Generate particle positions as UV coordinates
   const particles = useMemo(() => {
-    const length = actualSize * actualSize
+    const length = size * size
     const particles = new Float32Array(length * 3)
     
     for (let i = 0; i < length; i++) {
       const i3 = i * 3
-      particles[i3 + 0] = (i % actualSize) / actualSize      // u coordinate
-      particles[i3 + 1] = Math.floor(i / actualSize) / actualSize  // v coordinate  
+      particles[i3 + 0] = (i % size) / size      // u coordinate
+      particles[i3 + 1] = Math.floor(i / size) / size  // v coordinate  
       particles[i3 + 2] = 0                      // z = 0
     }
 
     return particles
-  }, [actualSize])
+  }, [size])
   
   // Convert gradient colors to uniform format
   const gradientData = useMemo(() => {
@@ -110,7 +110,7 @@ export function Particles({
       {/* Simulation mesh rendered to FBO */}
       {createPortal(
         <mesh>
-          <simulationMaterial ref={simRef} args={[actualSize]} />
+          <simulationMaterial ref={simRef} args={[size]} />
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
             <bufferAttribute attach="attributes-uv" count={uvs.length / 2} array={uvs} itemSize={2} />

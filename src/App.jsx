@@ -20,6 +20,7 @@ export default function App() {
 
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  const actualSize = isMobile ? 128 : 256  // Use less on mobile, otherwise use prop
 
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
@@ -230,6 +231,7 @@ export default function App() {
         blur={blur}
         focus={focus}
         position={[0, 0, 0]}
+        size={actualSize}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
