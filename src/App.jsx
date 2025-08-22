@@ -173,31 +173,32 @@ export default function App() {
       const startX = canvas.width / 2;
       const startY = canvas.height / 2;
       const endX = startX + 100; // Drag 100 pixels to the right
-      const endY = startY;
 
-      // 1. Start the drag
+      // 1. Dispatch mousedown event
       canvas.dispatchEvent(new MouseEvent('mousedown', {
         clientX: startX,
         clientY: startY,
         bubbles: true,
       }));
 
-      // 2. Perform the movement
-      canvas.dispatchEvent(new MouseEvent('mousemove', {
-        clientX: endX,
-        clientY: endY,
-        bubbles: true,
-      }));
+      // 2. Wait a moment before moving
+      setTimeout(() => {
+        // 3. Dispatch mousemove event
+        canvas.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: endX,
+          clientY: startY,
+          bubbles: true,
+        }));
 
-      // 3. End the drag
-      canvas.dispatchEvent(new MouseEvent('mouseup', {
-        clientX: endX,
-        clientY: endY,
-        bubbles: true,
-      }));
+        // 4. End the drag
+        canvas.dispatchEvent(new MouseEvent('mouseup', {
+          clientX: endX,
+          clientY: startY,
+          bubbles: true,
+        }));
+      }, 100); // 100ms delay to simulate a brief drag
     };
 
-    // Delay to ensure canvas is ready
     const timeoutId = setTimeout(simulateDrag, timeoutFromUrl ? parseFloat(timeoutFromUrl) : 1000);
     return () => clearTimeout(timeoutId);
   }, []);
