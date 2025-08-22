@@ -21,7 +21,7 @@ export default function App() {
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const safariSizes = isMobile ? 128 : 384
+  const safariSizes = isMobile ? 128 : 256
   const otherBrowserSizes = isMobile ? 128 : 384
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
   const shouldRotate = isSafari ? false : true;
@@ -164,6 +164,28 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
+  useEffect(() => {
+    const forceGPUActivation = () => {
+      // Simulate mouse movement to trigger GPU scaling
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        // Dispatch synthetic mouse events
+        const events = ['mouseenter', 'mousemove', 'mousedown', 'mouseup'];
+        events.forEach(eventType => {
+          canvas.dispatchEvent(new MouseEvent(eventType, {
+            bubbles: true,
+            cancelable: true,
+            clientX: canvas.width / 2,
+            clientY: canvas.height / 2
+          }));
+        });
+      }
+    };
+
+    // Delay to ensure canvas is ready
+    const timeoutId = setTimeout(forceGPUActivation, 100);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   return (
     <>
