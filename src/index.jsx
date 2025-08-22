@@ -1,35 +1,54 @@
-import * as THREE from 'three'
-import { extend, createRoot, events } from '@react-three/fiber'
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { Canvas } from '@react-three/fiber'
 import './styles.css'
 import App from './App.jsx'
 
-// https://docs.pmnd.rs/react-three-fiber/api/canvas
-extend(THREE)
+// Create the root for React DOM
+const root = createRoot(document.getElementById('root'))
 
-const root = createRoot(document.querySelector('canvas'), {
-  events,
-  linear: true,
-  camera: { fov: 25, position: [0, 0, 3] },
-  gl: { 
-    alpha: true,
-    antialias: true,
-    powerPreference: "high-performance",
-    // Add these for Safari iframe performance
-    desynchronized: true,           // Reduces input lag
-    premultipliedAlpha: false,      // Better color handling
-    preserveDrawingBuffer: false,   // Save memory (default, but explicit)
-    // Safari-specific optimizations
-    failIfMajorPerformanceCaveat: false, // Don't fall back to software rendering
-    stencil: false,                 // Disable stencil buffer if not needed
-    depth: true                     // Keep depth buffer for your 3D particles
-  },
-  // Force continuous rendering (equivalent to frameloop="always")
-  frameloop: 'always'
-})
+function CanvasApp() {
+  return (
+    <Canvas
+      // Camera settings
+      camera={{
+        fov: 25,
+        position: [0, 0, 3]
+      }}
 
-function renderApp() {
-  root.render(<App />)
+      // WebGL context settings optimized for Safari iframes
+      gl={{
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance",
+        // Safari iframe optimizations
+        desynchronized: true,           // Reduces input lag
+        premultipliedAlpha: false,      // Better color handling
+        preserveDrawingBuffer: false,   // Save memory
+        failIfMajorPerformanceCaveat: false, // Don't fall back to software rendering
+        stencil: false,                 // Disable stencil buffer if not needed
+        depth: true                     // Keep depth buffer for 3D particles
+      }}
+
+      // Performance settings
+      linear={true}                     // Linear color space
+      frameloop="always"                // Continuous rendering
+
+      // Safari iframe specific optimizations
+      resize={{ scroll: false }}       // Optimize resize handling
+      dpr={[1, 2]}                     // Limit pixel ratio for performance
+
+      // Additional iframe optimizations
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%'
+      }}
+    >
+      <App />
+    </Canvas>
+  )
 }
 
-window.addEventListener('resize', renderApp)
-renderApp() // Initial render
+// Render the Canvas component
+root.render(<CanvasApp />)

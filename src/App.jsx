@@ -2,7 +2,7 @@ import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
 import { useEffect, useRef } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber' // Removed useThree since we don't need gl and camera refs
 
 export default function App() {
   // Read URL parameters
@@ -105,9 +105,7 @@ export default function App() {
     gradientRadius
   } = controlValues
 
-  const { camera, gl } = useThree()
   const controlsRef = useRef()
-  // Add to your useFrame hook
   const frameCount = useRef(0);
 
   // Use useFrame to pass delta time to OrbitControls.update()
@@ -123,34 +121,12 @@ export default function App() {
     }
   })
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      // Update camera aspect ratio
-      camera.aspect = window.innerWidth / window.innerHeight
-      camera.updateProjectionMatrix()
-
-      // Update renderer size
-      gl.setSize(window.innerWidth, window.innerHeight)
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    }
-
-    // Add event listener
-    window.addEventListener('resize', handleResize)
-
-    // Initial setup
-    handleResize()
-
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize)
-  }, [camera, gl])
-
-  // Update background color (or make transparent)
+  // Handle background color for transparent mode
   useEffect(() => {
     if (transparentBg) {
       document.body.style.background = 'transparent'
       document.body.style.backgroundColor = 'transparent'
-      // Also make the canvas container transparent
+      // Find the canvas and make its container transparent
       const canvas = document.querySelector('canvas')
       if (canvas && canvas.parentElement) {
         canvas.parentElement.style.background = 'transparent'
@@ -159,11 +135,6 @@ export default function App() {
       document.body.style.background = backgroundColor
     }
   }, [backgroundColor, transparentBg])
-
-  // Update camera position when initialCameraZ changes
-  useEffect(() => {
-    camera.position.set(0, 0, initialCameraZ)
-  }, [initialCameraZ, camera])
 
   return (
     <>
