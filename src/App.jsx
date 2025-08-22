@@ -21,15 +21,14 @@ export default function App() {
   // Enhanced device detection
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-  const isInIframe = window.self !== window.top
-  const isFramer = window.location.href.includes('framer') || window.parent?.location?.href?.includes('framer')
+  
   
   // Keep original sizes, only detect Safari for blur optimization
   const safariSizes = isMobile ? 32 : 64
   const otherBrowserSizes = isMobile ? 128 : 368
   const actualSize = isSafari ? safariSizes : otherBrowserSizes
   
-  console.log('Environment:', { isSafari, isMobile, isInIframe, isFramer, actualSize })
+  console.log('Environment:', { isSafari, isMobile, actualSize })
 
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
