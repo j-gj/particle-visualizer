@@ -21,14 +21,14 @@ export function Particles({
   fov = 60, 
   blur = 30, 
   focus = 5,
-  size = 512,
+  size = 256, //use less it's lagging
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
   ...props 
 }) {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  const actualSize = isMobile ? 256 : size  // Use 256 on mobile, otherwise use prop
+  const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
   // console.log('agent', navigator.userAgent, 'actualSize', actualSize)
   const simRef = useRef()
   const renderRef = useRef()
