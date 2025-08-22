@@ -21,13 +21,15 @@ export function Particles({
   fov = 60, 
   blur = 30, 
   focus = 5,
-  size = 256,
-  isSafari = false,
+  size = 256, //will use what App.jsx gives it
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
   ...props 
 }) {
+  // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  // const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
+  // console.log('agent', navigator.userAgent, 'size', size)
   const simRef = useRef()
   const renderRef = useRef()
   
@@ -73,8 +75,6 @@ export function Particles({
     };
   }, [gradientColors, gradientStops]);
   
-  // Remove frame throttling - keep original behavior
-  
   // Update simulation every frame
   useFrame(({ gl, clock }) => {
     if (!simRef.current || !renderRef.current) return
@@ -93,7 +93,7 @@ export function Particles({
     renderRef.current.uniforms.uGradientColors.value = gradientData.colors
     renderRef.current.uniforms.uGradientStops.value = gradientData.stops
     renderRef.current.uniforms.uGradientRadius.value = gradientRadius
-    renderRef.current.uniforms.uIsSafari.value = isSafari ? 1.0 : 0.0
+    // In Particles.jsx -> useFrame
     renderRef.current.uniforms.uTime.value = clock.elapsedTime;
     
     // Update simulation material

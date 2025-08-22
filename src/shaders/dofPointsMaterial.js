@@ -11,11 +11,9 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uFocus: { value: 4 },
         uFov: { value: 45 },
         uBlur: { value: 30 },
-        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1]) }, // 4 RGB colors
+        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]) }, // 4 RGB colors
         uGradientStops: { value: new Float32Array([0.0, 0.3, 0.7, 1.0]) }, // 4 stops
-        uGradientRadius: { value: 2.0 },
-        // Only add Safari detection for blur optimization
-        uIsSafari: { value: 0.0 }
+        uGradientRadius: { value: 2.0 }
       },
       vertexShader: `
         precision mediump float;
@@ -26,7 +24,6 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uniform float uFov;
         uniform float uBlur;
         uniform float uGradientRadius;
-        uniform float uIsSafari;
         varying float vDistance;
         varying float vGradientDistance;
         varying vec3 vWorldPosition;
@@ -42,9 +39,7 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
           vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
           vWorldPosition = worldPosition.xyz;
 
-          // ONLY change: Reduce blur impact for Safari
-          float effectiveBlur = mix(uBlur, uBlur * 0.3, uIsSafari);
-          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * effectiveBlur;
+          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * uBlur;
         }
       `,
       fragmentShader: `
@@ -54,12 +49,15 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         varying vec3 vWorldPosition;
         uniform vec3 uGradientColors[4];
         uniform float uGradientStops[4];
-        uniform float uTime;
 
-        // Keep original gradient function - NO CHANGES
+        uniform float uTime; // Add the time uniform
+
+        // Function to interpolate between gradient colors
         vec3 getGradientColor(float t) {
+          // Clamp t to [0, 1]
           t = clamp(t, 0.0, 1.0);
           
+          // Find which segment we're in
           if (t <= uGradientStops[0]) {
             return uGradientColors[0];
           } else if (t <= uGradientStops[1]) {
@@ -80,10 +78,9 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
           vec2 cxy = 2.0 * gl_PointCoord - 1.0;
           if (dot(cxy, cxy) > 1.0) discard;
 
-          // Keep original alpha calculation - NO CHANGES
           float alpha = (1.04 - clamp(vDistance, 0.0, 1.0));
 
-          // Keep original time animation - NO CHANGES
+          // Add a sinusoidal time-based offset to the gradient lookup
           float timeOffset = sin(uTime * 0.5) * 0.1;
           vec3 gradientColor = getGradientColor(vGradientDistance + timeOffset);
 

@@ -1,7 +1,7 @@
 import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 
 export default function App() {
@@ -18,29 +18,13 @@ export default function App() {
   const transparentBg = urlParams.get('transparent') === 'true'
   const rotationVerticalParam = urlParams.get('rotationVertical')
 
-  
-  
-  
-  
-  // Memoize device detection - assume always in iframe
-  const deviceInfo = useMemo(() => {
-    // Enhanced device detection
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-    
-    // Keep original sizes, only detect Safari for blur optimization
-    const safariSizes = isMobile ? 32 : 64
-    const otherBrowserSizes = isMobile ? 128 : 368
-    const actualSize = isSafari ? safariSizes : otherBrowserSizes
-    
-    
-    console.log('Browser:', { isSafari, isMobile, actualSize })
-    
-    return { isMobile, isSafari, actualSize }
-  }, [])
-
-  const { isMobile, isSafari, actualSize } = deviceInfo
-
+  // Detect if device is mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const safariSizes = isMobile ? 32 : 64
+  const otherBrowserSizes = isMobile ? 128 : 768
+  const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
+  console.log('isSafari', isSafari,'actualSize', actualSize)
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
     ? rotationVerticalParam === 'true'
@@ -48,8 +32,6 @@ export default function App() {
 
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
-  
-  // Keep original values, don't reduce them
   const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
   const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
@@ -64,9 +46,9 @@ export default function App() {
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
+    // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
-    performanceMode: { value: false },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
     gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
@@ -88,7 +70,6 @@ export default function App() {
     initialCameraZ: 2.5,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
-    performanceMode: false,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
     gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
@@ -100,7 +81,6 @@ export default function App() {
     gradientRadius: 1.35
   }
 
-  // Remove performance mode from destructuring
   const {
     frequency,
     speedFactor,
@@ -111,7 +91,7 @@ export default function App() {
     initialCameraZ,
     rotationSpeed,
     enableVerticalRotation,
-    // Gradient controls
+    // New gradient controls
     gradientColor1,
     gradientColor2,
     gradientColor3,
@@ -126,7 +106,7 @@ export default function App() {
   const { camera, gl } = useThree()
   const controlsRef = useRef()
 
-  // Remove frame throttling - keep original behavior
+  // Use useFrame to pass delta time to OrbitControls.update()
   useFrame((state, delta) => {
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
@@ -176,53 +156,61 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
-  // Keep original GPU warmup
+
+  //try warm up of GPU?
   useEffect(() => {
-    const warmUpGPU = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 32;
-      
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (gl) {
-        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertexShader, `
-          attribute vec2 position;
-          void main() {
-            gl_Position = vec4(position, 0.0, 1.0);
-          }
-        `);
-        gl.compileShader(vertexShader);
-        
-        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragmentShader, `
-          precision mediump float;
-          void main() {
-            gl_FragColor = vec4(1.0);
-          }
-        `);
-        gl.compileShader(fragmentShader);
-        
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-        
-        gl.useProgram(program);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.finish();
-        
-        gl.deleteProgram(program);
-        gl.deleteShader(vertexShader);
-        gl.deleteShader(fragmentShader);
-      }
-      
-      canvas.remove();
-    };
+  const warmUpGPU = () => {
+    // Create a simple WebGL context to trigger GPU initialization
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
     
-    const timeoutId = setTimeout(warmUpGPU, 0);
-    return () => clearTimeout(timeoutId);
-  }, []);
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (gl) {
+      // Force shader compilation by creating a simple shader program
+      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vertexShader, `
+        attribute vec2 position;
+        void main() {
+          gl_Position = vec4(position, 0.0, 1.0);
+        }
+      `);
+      gl.compileShader(vertexShader);
+      
+      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fragmentShader, `
+        precision mediump float;
+        void main() {
+          gl_FragColor = vec4(1.0);
+        }
+      `);
+      gl.compileShader(fragmentShader);
+      
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      
+      // Render one frame to warm up
+      gl.useProgram(program);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.finish(); // Wait for GPU operations to complete
+      
+      // Clean up
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+    }
+    
+    // Remove canvas
+    canvas.remove();
+  };
+  
+  // Run warm-up on next tick to not block initial render
+  const timeoutId = setTimeout(warmUpGPU, 0);
+  
+  return () => clearTimeout(timeoutId);
+}, []);
 
   return (
     <>
@@ -247,7 +235,6 @@ export default function App() {
         focus={focus}
         position={[0, 0, 0]}
         size={actualSize}
-        isSafari={isSafari}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
