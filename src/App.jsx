@@ -124,26 +124,26 @@ export default function App() {
   })
 
   // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      // Update camera aspect ratio
-      camera.aspect = window.innerWidth / window.innerHeight
-      camera.updateProjectionMatrix()
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     // Update camera aspect ratio
+  //     camera.aspect = window.innerWidth / window.innerHeight
+  //     camera.updateProjectionMatrix()
 
-      // Update renderer size
-      gl.setSize(window.innerWidth, window.innerHeight)
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    }
+  //     // Update renderer size
+  //     gl.setSize(window.innerWidth, window.innerHeight)
+  //     gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  //   }
 
-    // Add event listener
-    window.addEventListener('resize', handleResize)
+  //   // Add event listener
+  //   window.addEventListener('resize', handleResize)
 
-    // Initial setup
-    handleResize()
+  //   // Initial setup
+  //   handleResize()
 
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize)
-  }, [camera, gl])
+  //   // Cleanup
+  //   return () => window.removeEventListener('resize', handleResize)
+  // }, [camera, gl])
 
   // Update background color (or make transparent)
   useEffect(() => {
@@ -165,73 +165,73 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
-  useEffect(() => {
-    const simulateDrag = () => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas || !controlsRef.current) return;
+  // useEffect(() => {
+  //   const simulateDrag = () => {
+  //     const canvas = document.querySelector('canvas');
+  //     if (!canvas || !controlsRef.current) return;
 
-      console.log('Starting mouse simulation for Safari performance boost...');
+  //     console.log('Starting mouse simulation for Safari performance boost...');
 
-      // Get canvas bounding rect for proper coordinate calculation
-      const rect = canvas.getBoundingClientRect();
-      const startX = rect.width / 2;
-      const startY = rect.height / 2;
-      const endX = startX + 100; // Drag 100 pixels to the right
-      const steps = 20;
-      let currentStep = 0;
+  //     // Get canvas bounding rect for proper coordinate calculation
+  //     const rect = canvas.getBoundingClientRect();
+  //     const startX = rect.width / 2;
+  //     const startY = rect.height / 2;
+  //     const endX = startX + 100; // Drag 100 pixels to the right
+  //     const steps = 20;
+  //     let currentStep = 0;
 
-      // Create proper pointer event properties
-      const createPointerEvent = (type, clientX, clientY, pointerId = 1) => {
-        const event = new PointerEvent(type, {
-          pointerId: pointerId,
-          clientX: clientX + rect.left,
-          clientY: clientY + rect.top,
-          button: 0, // Left mouse button
-          buttons: type === 'pointerup' ? 0 : 1, // No buttons pressed on up, left button on down/move
-          isPrimary: true,
-          bubbles: true,
-          cancelable: true
-        });
-        return event;
-      };
+  //     // Create proper pointer event properties
+  //     const createPointerEvent = (type, clientX, clientY, pointerId = 1) => {
+  //       const event = new PointerEvent(type, {
+  //         pointerId: pointerId,
+  //         clientX: clientX + rect.left,
+  //         clientY: clientY + rect.top,
+  //         button: 0, // Left mouse button
+  //         buttons: type === 'pointerup' ? 0 : 1, // No buttons pressed on up, left button on down/move
+  //         isPrimary: true,
+  //         bubbles: true,
+  //         cancelable: true
+  //       });
+  //       return event;
+  //     };
 
-      // Start the drag with pointerdown
-      const pointerDownEvent = createPointerEvent('pointerdown', startX, startY);
-      canvas.dispatchEvent(pointerDownEvent);
-      console.log('Dispatched pointerdown at', startX, startY);
+  //     // Start the drag with pointerdown
+  //     const pointerDownEvent = createPointerEvent('pointerdown', startX, startY);
+  //     canvas.dispatchEvent(pointerDownEvent);
+  //     console.log('Dispatched pointerdown at', startX, startY);
 
-      const move = () => {
-        if (currentStep < steps) {
-          currentStep++;
-          const newX = startX + (endX - startX) * (currentStep / steps);
+  //     const move = () => {
+  //       if (currentStep < steps) {
+  //         currentStep++;
+  //         const newX = startX + (endX - startX) * (currentStep / steps);
 
-          // Dispatch pointermove event
-          const pointerMoveEvent = createPointerEvent('pointermove', newX, startY);
-          canvas.dispatchEvent(pointerMoveEvent);
+  //         // Dispatch pointermove event
+  //         const pointerMoveEvent = createPointerEvent('pointermove', newX, startY);
+  //         canvas.dispatchEvent(pointerMoveEvent);
 
-          console.log(`Drag step ${currentStep}: moving to ${newX}`);
+  //         console.log(`Drag step ${currentStep}: moving to ${newX}`);
 
-          // Schedule next move
-          requestAnimationFrame(move);
-        } else {
-          // End the drag with pointerup
-          const pointerUpEvent = createPointerEvent('pointerup', endX, startY);
-          canvas.dispatchEvent(pointerUpEvent);
-          console.log('Dispatched pointerup at', endX, startY);
-          console.log('Mouse simulation complete!');
-        }
-      };
+  //         // Schedule next move
+  //         requestAnimationFrame(move);
+  //       } else {
+  //         // End the drag with pointerup
+  //         const pointerUpEvent = createPointerEvent('pointerup', endX, startY);
+  //         canvas.dispatchEvent(pointerUpEvent);
+  //         console.log('Dispatched pointerup at', endX, startY);
+  //         console.log('Mouse simulation complete!');
+  //       }
+  //     };
 
-      // Start the movement sequence
-      requestAnimationFrame(move);
-    };
+  //     // Start the movement sequence
+  //     requestAnimationFrame(move);
+  //   };
 
-    // Only run on Safari and wait a bit for everything to initialize
-    if (isSafari) {
-      const timeoutId = setTimeout(simulateDrag, 2000); // Wait 2 seconds for full initialization
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isSafari]);
+  //   // Only run on Safari and wait a bit for everything to initialize
+  //   if (isSafari) {
+  //     const timeoutId = setTimeout(simulateDrag, 2000); // Wait 2 seconds for full initialization
+  //     return () => clearTimeout(timeoutId);
+  //   }
+  // }, [isSafari]);
 
   return (
     <>
