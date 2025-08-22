@@ -165,26 +165,44 @@ export default function App() {
   }, [initialCameraZ, camera])
 
   useEffect(() => {
-    const forceGPUActivation = () => {
-      // Simulate mouse movement to trigger GPU scaling
-      const canvas = document.querySelector('canvas');
-      if (canvas) {
-        // Dispatch synthetic mouse events
-        const events = ['mouseenter', 'mousemove', 'mousedown', 'mouseup'];
-        events.forEach(eventType => {
-          canvas.dispatchEvent(new MouseEvent(eventType, {
-            bubbles: true,
-            cancelable: true,
-            clientX: canvas.width / 2,
-            clientY: canvas.height / 2
-          }));
-        });
-      }
+    const simulateClickAndDrag = async () => {
+      // Wait for OrbitControls to be ready
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      if (!controlsRef.current) return;
+
+      const controls = controlsRef.current;
+
+      // Get current rotation angles
+      const startAzimuth = controls.getAzimuthalAngle();
+      const startPolar = controls.getPolarAngle();
+
+      // Target rotation (simulate a drag movement)
+      const targetAzimuth = startAzimuth + 0.5; // Rotate ~30 degrees horizontally
+      const targetPolar = Math.max(0.1, Math.min(Math.PI - 0.1, startPolar + 0.2)); // Small vertical movement
+
+      // Animate the rotation over time
+      let progress = 0;
+      const animateRotation = () => {
+        progress += 0.08; // Speed of the simulated drag
+
+        if (progress <= 1) {
+          // Smooth interpolation between start and target
+          const currentAzimuth = THREE.MathUtils.lerp(startAzimuth, targetAzimuth, progress);
+          const currentPolar = THREE.MathUtils.lerp(startPolar, targetPolar, progress);
+
+          controls.setAzimuthalAngle(currentAzimuth);
+          controls.setPolarAngle(currentPolar);
+          controls.update();
+
+          requestAnimationFrame(animateRotation);
+        }
+      };
+
+      animateRotation();
     };
 
-    // Delay to ensure canvas is ready
-    const timeoutId = setTimeout(forceGPUActivation, 100);
-    return () => clearTimeout(timeoutId);
+    simulateClickAndDrag();
   }, []);
 
   return (
