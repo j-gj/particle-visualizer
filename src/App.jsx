@@ -18,13 +18,23 @@ export default function App() {
   const transparentBg = urlParams.get('transparent') === 'true'
   const rotationVerticalParam = urlParams.get('rotationVertical')
 
-  // Detect if device is mobile
+  // Enhanced device detection
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const safariSizes = isMobile ? 32 : 64
-  const otherBrowserSizes = isMobile ? 128 : 768
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  const isInIframe = window.self !== window.top
+  const isFramer = window.location.href.includes('framer') || window.parent?.location?.href?.includes('framer')
+  
+  // Detect if we're in a problematic environment (Safari + iframe/Framer)
+  const isProblematicEnvironment = (isSafari && isInIframe) || isFramer
+  
+  // Adjust sizes based on environment
+  const safariSizes = isMobile ? 64 : 128
+  const otherBrowserSizes = isMobile ? 128 : 256
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
   console.log('isSafari', isSafari,'actualSize', actualSize)
+  
+  console.log('Environment:', { isSafari, isMobile, isInIframe, isFramer, isProblematicEnvironment, actualSize })
+
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
     ? rotationVerticalParam === 'true'
@@ -32,9 +42,11 @@ export default function App() {
 
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
-  const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
-  const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
-  const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
+  
+  // Reduce default values for problematic environments
+  const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : (isProblematicEnvironment ? 0.1 : 0.3)
+  const density = densityFromUrl ? parseFloat(densityFromUrl) : (isProblematicEnvironment ? 0.05 : 0.15)
+  const speed = speedFromUrl ? parseFloat(speedFromUrl) : (isProblematicEnvironment ? 1 : 4)
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -42,13 +54,13 @@ export default function App() {
     frequency: { value: density, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
-    blur: { value: 25, min: 0, max: 50, step: 0.1 },
+    blur: { value: isProblematicEnvironment ? 5 : 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
-    // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
+    performanceMode: { value: isProblematicEnvironment },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
     gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
@@ -64,12 +76,13 @@ export default function App() {
     frequency: density,
     speedFactor: speed,
     fov: 35,
-    blur: 21,
+    blur: isProblematicEnvironment ? 5 : 21,
     focus: 3.45,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
+    performanceMode: isProblematicEnvironment,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
     gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
@@ -91,7 +104,8 @@ export default function App() {
     initialCameraZ,
     rotationSpeed,
     enableVerticalRotation,
-    // New gradient controls
+    performanceMode,
+    // Gradient controls
     gradientColor1,
     gradientColor2,
     gradientColor3,
@@ -106,8 +120,16 @@ export default function App() {
   const { camera, gl } = useThree()
   const controlsRef = useRef()
 
+  // Throttle frame updates for problematic environments
+  const frameCount = useRef(0)
+  const shouldSkipFrame = isProblematicEnvironment && (frameCount.current % 2 === 0)
+
   // Use useFrame to pass delta time to OrbitControls.update()
   useFrame((state, delta) => {
+    frameCount.current++
+    
+    if (shouldSkipFrame) return
+    
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
       controlsRef.current.update(delta)
@@ -123,7 +145,7 @@ export default function App() {
 
       // Update renderer size
       gl.setSize(window.innerWidth, window.innerHeight)
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      gl.setPixelRatio(Math.min(window.devicePixelRatio, isProblematicEnvironment ? 1 : 2))
     }
 
     // Add event listener
@@ -134,7 +156,7 @@ export default function App() {
 
     // Cleanup
     return () => window.removeEventListener('resize', handleResize)
-  }, [camera, gl])
+  }, [camera, gl, isProblematicEnvironment])
 
   // Update background color (or make transparent)
   useEffect(() => {
@@ -156,61 +178,55 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
-
-  //try warm up of GPU?
+  // Simplified GPU warmup for problematic environments
   useEffect(() => {
-  const warmUpGPU = () => {
-    // Create a simple WebGL context to trigger GPU initialization
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
+    if (isProblematicEnvironment) return // Skip warmup in problematic environments
     
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    if (gl) {
-      // Force shader compilation by creating a simple shader program
-      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-      gl.shaderSource(vertexShader, `
-        attribute vec2 position;
-        void main() {
-          gl_Position = vec4(position, 0.0, 1.0);
-        }
-      `);
-      gl.compileShader(vertexShader);
+    const warmUpGPU = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
       
-      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-      gl.shaderSource(fragmentShader, `
-        precision mediump float;
-        void main() {
-          gl_FragColor = vec4(1.0);
-        }
-      `);
-      gl.compileShader(fragmentShader);
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (gl) {
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader, `
+          attribute vec2 position;
+          void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+          }
+        `);
+        gl.compileShader(vertexShader);
+        
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, `
+          precision mediump float;
+          void main() {
+            gl_FragColor = vec4(1.0);
+          }
+        `);
+        gl.compileShader(fragmentShader);
+        
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        
+        gl.useProgram(program);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.finish();
+        
+        gl.deleteProgram(program);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+      }
       
-      const program = gl.createProgram();
-      gl.attachShader(program, vertexShader);
-      gl.attachShader(program, fragmentShader);
-      gl.linkProgram(program);
-      
-      // Render one frame to warm up
-      gl.useProgram(program);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.finish(); // Wait for GPU operations to complete
-      
-      // Clean up
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-    }
+      canvas.remove();
+    };
     
-    // Remove canvas
-    canvas.remove();
-  };
-  
-  // Run warm-up on next tick to not block initial render
-  const timeoutId = setTimeout(warmUpGPU, 0);
-  
-  return () => clearTimeout(timeoutId);
-}, []);
+    const timeoutId = setTimeout(warmUpGPU, 0);
+    return () => clearTimeout(timeoutId);
+  }, [isProblematicEnvironment]);
 
   return (
     <>
@@ -221,7 +237,7 @@ export default function App() {
         autoRotateSpeed={rotationSpeed}
         enableZoom={false}
         enableDamping={true}
-        dampingFactor={0.05}
+        dampingFactor={isProblematicEnvironment ? 0.1 : 0.05}
         enableRotate={true}
         minPolarAngle={enableVRotation ? 0 : Math.PI / 2}
         maxPolarAngle={enableVRotation ? Math.PI : Math.PI / 2}
@@ -235,6 +251,7 @@ export default function App() {
         focus={focus}
         position={[0, 0, 0]}
         size={actualSize}
+        performanceMode={performanceMode}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}

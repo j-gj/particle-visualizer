@@ -13,7 +13,9 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uBlur: { value: 30 },
         uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]) }, // 4 RGB colors
         uGradientStops: { value: new Float32Array([0.0, 0.3, 0.7, 1.0]) }, // 4 stops
-        uGradientRadius: { value: 2.0 }
+        uGradientRadius: { value: 2.0 },
+        // Add performance mode toggle
+        uPerformanceMode: { value: 1.0 } // 1.0 = high performance, 0.0 = high quality
       },
       vertexShader: `
         precision mediump float;
@@ -24,6 +26,7 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uniform float uFov;
         uniform float uBlur;
         uniform float uGradientRadius;
+        uniform float uPerformanceMode;
         varying float vDistance;
         varying float vGradientDistance;
         varying vec3 vWorldPosition;
@@ -35,11 +38,20 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
 
           gl_Position = projectionMatrix * mvPosition;
 
-          vDistance = abs(uFocus - -mvPosition.z);
-          vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
+          // Simplified distance calculation for performance mode
+          if (uPerformanceMode > 0.5) {
+            vDistance = abs(uFocus - (-mvPosition.z));
+            vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
+          } else {
+            vDistance = abs(uFocus - (-mvPosition.z));
+            vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
+          }
+          
           vWorldPosition = worldPosition.xyz;
 
-          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * uBlur;
+          // Reduce point size calculation complexity
+          float sizeFactor = mix(2.0, uBlur, uPerformanceMode);
+          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * sizeFactor;
         }
       `,
       fragmentShader: `
@@ -49,15 +61,19 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         varying vec3 vWorldPosition;
         uniform vec3 uGradientColors[4];
         uniform float uGradientStops[4];
+        uniform float uTime;
+        uniform float uPerformanceMode;
 
-        uniform float uTime; // Add the time uniform
-
-        // Function to interpolate between gradient colors
-        vec3 getGradientColor(float t) {
-          // Clamp t to [0, 1]
+        // Simplified gradient function for performance
+        vec3 getGradientColorFast(float t) {
           t = clamp(t, 0.0, 1.0);
           
-          // Find which segment we're in
+          // Use only 2 colors in performance mode
+          if (uPerformanceMode > 0.5) {
+            return mix(uGradientColors[0], uGradientColors[2], t);
+          }
+          
+          // Full gradient calculation for quality mode
           if (t <= uGradientStops[0]) {
             return uGradientColors[0];
           } else if (t <= uGradientStops[1]) {
@@ -78,11 +94,21 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
           vec2 cxy = 2.0 * gl_PointCoord - 1.0;
           if (dot(cxy, cxy) > 1.0) discard;
 
-          float alpha = (1.04 - clamp(vDistance, 0.0, 1.0));
+          // Simplified alpha calculation
+          float alpha = mix(
+            (1.04 - clamp(vDistance, 0.0, 1.0)), // Full calculation
+            0.8, // Fixed alpha for performance
+            uPerformanceMode
+          );
 
-          // Add a sinusoidal time-based offset to the gradient lookup
-          float timeOffset = sin(uTime * 0.5) * 0.1;
-          vec3 gradientColor = getGradientColor(vGradientDistance + timeOffset);
+          // Simplified time animation
+          float timeOffset = mix(
+            sin(uTime * 0.5) * 0.1, // Full animation
+            0.0, // No animation for performance
+            uPerformanceMode
+          );
+          
+          vec3 gradientColor = getGradientColorFast(vGradientDistance + timeOffset);
 
           gl_FragColor = vec4(gradientColor, alpha);
         }

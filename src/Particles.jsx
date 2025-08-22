@@ -21,15 +21,13 @@ export function Particles({
   fov = 60, 
   blur = 30, 
   focus = 5,
-  size = 256, //will use what App.jsx gives it
+  size = 256,
+  performanceMode = false,
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
   ...props 
 }) {
-  // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  // const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
-  // console.log('agent', navigator.userAgent, 'size', size)
   const simRef = useRef()
   const renderRef = useRef()
   
@@ -75,9 +73,17 @@ export function Particles({
     };
   }, [gradientColors, gradientStops]);
   
+  // Frame throttling for performance mode
+  const frameCount = useRef(0)
+  
   // Update simulation every frame
   useFrame(({ gl, clock }) => {
     if (!simRef.current || !renderRef.current) return
+    
+    frameCount.current++
+    
+    // Skip frames in performance mode
+    if (performanceMode && frameCount.current % 3 !== 0) return
     
     // Render simulation to FBO
     gl.setRenderTarget(target)
@@ -93,16 +99,16 @@ export function Particles({
     renderRef.current.uniforms.uGradientColors.value = gradientData.colors
     renderRef.current.uniforms.uGradientStops.value = gradientData.stops
     renderRef.current.uniforms.uGradientRadius.value = gradientRadius
-    // In Particles.jsx -> useFrame
+    renderRef.current.uniforms.uPerformanceMode.value = performanceMode ? 1.0 : 0.0
     renderRef.current.uniforms.uTime.value = clock.elapsedTime;
     
-    // Update simulation material
+    // Update simulation material with throttled frequency updates
+    const targetFreq = frequency
+    const currentFreq = simRef.current.uniforms.uFrequency.value
+    const lerpSpeed = performanceMode ? 0.05 : 0.1
+    
     simRef.current.uniforms.uTime.value = clock.elapsedTime * speedFactor
-    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(
-      simRef.current.uniforms.uFrequency.value, 
-      frequency, 
-      0.1
-    )
+    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(currentFreq, targetFreq, lerpSpeed)
   })
   
   return (
