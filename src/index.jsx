@@ -1,5 +1,6 @@
+import React from 'react'
 import * as THREE from 'three'
-import { Canvas, events } from '@react-three/fiber' // Add events import
+import { Canvas } from '@react-three/fiber'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 
@@ -37,20 +38,10 @@ function Main() {
 
       // Performance settings
       linear={true}
-      frameloop="always" // Equivalent to your current setup
+      frameloop="always"
 
-      // Built-in resize handling (better than manual)
+      // Built-in resize handling
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
-
-      // Event handling optimizations
-      events={(store) => ({
-        ...events(store),
-        // Optimize event handling for Safari iframes
-        filter: isSafari ? (intersections, state) => {
-          // Reduce event processing overhead on Safari
-          return intersections.slice(0, 1); // Only process first intersection
-        } : undefined
-      })}
 
       // Performance monitoring and optimizations
       onCreated={({ gl, camera, scene, size }) => {
@@ -90,13 +81,6 @@ function Main() {
     </Canvas>
   );
 }
-
-// Export for use in your main file
-export default Main;
-
-
-
-
 
 const container = document.getElementById('root')
 const root = createRoot(container)
