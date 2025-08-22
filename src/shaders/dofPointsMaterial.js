@@ -42,6 +42,7 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         }
       `,
       fragmentShader: `
+        precision mediump float;
         varying float vDistance;
         varying float vGradientDistance;
         varying vec3 vWorldPosition;
