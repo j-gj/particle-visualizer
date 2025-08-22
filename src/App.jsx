@@ -2,7 +2,7 @@ import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
 import { useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber' // Removed useThree since we don't need gl and camera refs
+import { useFrame, useThree } from '@react-three/fiber' // Added useThree back for camera control
 
 export default function App() {
   // Read URL parameters
@@ -12,7 +12,6 @@ export default function App() {
   const gc2FromUrl = urlParams.get('gc2')
   const gc3FromUrl = urlParams.get('gc3')
   const gc4FromUrl = urlParams.get('gc4')
-  const timeoutFromUrl = urlParams.get('timeout')
   const densityFromUrl = urlParams.get('d')
   const speedFromUrl = urlParams.get('s')
   const rotationFromUrl = urlParams.get('r')
@@ -105,6 +104,7 @@ export default function App() {
     gradientRadius
   } = controlValues
 
+  const { camera } = useThree() // Get camera reference for position control
   const controlsRef = useRef()
   const frameCount = useRef(0);
 
@@ -135,6 +135,11 @@ export default function App() {
       document.body.style.background = backgroundColor
     }
   }, [backgroundColor, transparentBg])
+
+  // Update camera position when initialCameraZ changes
+  useEffect(() => {
+    camera.position.set(0, 0, initialCameraZ)
+  }, [initialCameraZ, camera])
 
   return (
     <>

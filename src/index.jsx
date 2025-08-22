@@ -39,11 +39,11 @@ function CanvasApp() {
       dpr={[1, 2]}                     // Limit pixel ratio for performance
 
       // Additional iframe optimizations
-      style={{
-        display: 'block',
-        width: '100%',
-        height: '100%'
-      }}
+      // style={{
+      //   display: 'block',
+      //   width: '100%',
+      //   height: '100%'
+      // }}
     >
       <App />
     </Canvas>
