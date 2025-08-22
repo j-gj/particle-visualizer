@@ -189,7 +189,7 @@ export default function App() {
           
           currentStep++;
           const newX = startX + (endX - startX) * (currentStep / steps);
-          console.log("step", step, newX)
+          console.log("step", currentStep, newX)
           canvas.dispatchEvent(new MouseEvent('mousemove', {
             clientX: newX,
             clientY: startY,
