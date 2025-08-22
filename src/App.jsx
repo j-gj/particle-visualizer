@@ -186,9 +186,10 @@ export default function App() {
       // A function that dispatches a series of mousemove events
       const move = () => {
         if (currentStep < steps) {
+          
           currentStep++;
           const newX = startX + (endX - startX) * (currentStep / steps);
-
+          console.log("step", step, newX)
           canvas.dispatchEvent(new MouseEvent('mousemove', {
             clientX: newX,
             clientY: startY,
