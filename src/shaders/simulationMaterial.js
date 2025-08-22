@@ -243,6 +243,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
         uTime: { value: 0 }
       },
       vertexShader: `
+        precision mediump float;
         varying vec2 vUv;
         void main() {
           vUv = uv;

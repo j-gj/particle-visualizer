@@ -16,6 +16,7 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uGradientRadius: { value: 2.0 }
       },
       vertexShader: `
+        precision mediump float;
         uniform sampler2D positions;
         uniform float pointSize;
         uniform float uTime;
