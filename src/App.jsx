@@ -12,6 +12,7 @@ export default function App() {
   const gc2FromUrl = urlParams.get('gc2')
   const gc3FromUrl = urlParams.get('gc3')
   const gc4FromUrl = urlParams.get('gc4')
+  const timeoutFromUrl = urlParams.get('timeout')
   const densityFromUrl = urlParams.get('d')
   const speedFromUrl = urlParams.get('s')
   const rotationFromUrl = urlParams.get('r')
@@ -165,44 +166,40 @@ export default function App() {
   }, [initialCameraZ, camera])
 
   useEffect(() => {
-    const simulateClickAndDrag = async () => {
-      // Wait for OrbitControls to be ready
-      await new Promise(resolve => setTimeout(resolve, 200));
+    const simulateDrag = () => {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) return;
 
-      if (!controlsRef.current) return;
+      const startX = canvas.width / 2;
+      const startY = canvas.height / 2;
+      const endX = startX + 100; // Drag 100 pixels to the right
+      const endY = startY;
 
-      const controls = controlsRef.current;
+      // 1. Start the drag
+      canvas.dispatchEvent(new MouseEvent('mousedown', {
+        clientX: startX,
+        clientY: startY,
+        bubbles: true,
+      }));
 
-      // Get current rotation angles
-      const startAzimuth = controls.getAzimuthalAngle();
-      const startPolar = controls.getPolarAngle();
+      // 2. Perform the movement
+      canvas.dispatchEvent(new MouseEvent('mousemove', {
+        clientX: endX,
+        clientY: endY,
+        bubbles: true,
+      }));
 
-      // Target rotation (simulate a drag movement)
-      const targetAzimuth = startAzimuth + 0.5; // Rotate ~30 degrees horizontally
-      const targetPolar = Math.max(0.1, Math.min(Math.PI - 0.1, startPolar + 0.2)); // Small vertical movement
-
-      // Animate the rotation over time
-      let progress = 0;
-      const animateRotation = () => {
-        progress += 0.08; // Speed of the simulated drag
-
-        if (progress <= 1) {
-          // Smooth interpolation between start and target
-          const currentAzimuth = THREE.MathUtils.lerp(startAzimuth, targetAzimuth, progress);
-          const currentPolar = THREE.MathUtils.lerp(startPolar, targetPolar, progress);
-
-          controls.setAzimuthalAngle(currentAzimuth);
-          controls.setPolarAngle(currentPolar);
-          controls.update();
-
-          requestAnimationFrame(animateRotation);
-        }
-      };
-
-      animateRotation();
+      // 3. End the drag
+      canvas.dispatchEvent(new MouseEvent('mouseup', {
+        clientX: endX,
+        clientY: endY,
+        bubbles: true,
+      }));
     };
 
-    simulateClickAndDrag();
+    // Delay to ensure canvas is ready
+    const timeoutId = setTimeout(simulateDrag, timeoutFromUrl ? parseFloat(timeoutFromUrl) : 1000);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   return (
