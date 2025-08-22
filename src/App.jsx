@@ -1,7 +1,7 @@
 import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 
 export default function App() {
@@ -18,17 +18,28 @@ export default function App() {
   const transparentBg = urlParams.get('transparent') === 'true'
   const rotationVerticalParam = urlParams.get('rotationVertical')
 
-  // Enhanced device detection
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   
   
-  // Keep original sizes, only detect Safari for blur optimization
-  const safariSizes = isMobile ? 32 : 64
-  const otherBrowserSizes = isMobile ? 128 : 368
-  const actualSize = isSafari ? safariSizes : otherBrowserSizes
   
-  console.log('Environment:', { isSafari, isMobile, actualSize })
+  
+  // Memoize device detection - assume always in iframe
+  const deviceInfo = useMemo(() => {
+    // Enhanced device detection
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    
+    // Keep original sizes, only detect Safari for blur optimization
+    const safariSizes = isMobile ? 32 : 64
+    const otherBrowserSizes = isMobile ? 128 : 368
+    const actualSize = isSafari ? safariSizes : otherBrowserSizes
+    
+    
+    console.log('Browser:', { isSafari, isMobile, actualSize })
+    
+    return { isMobile, isSafari, actualSize }
+  }, [])
+
+  const { isMobile, isSafari, actualSize } = deviceInfo
 
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
