@@ -20,7 +20,10 @@ export default function App() {
 
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  const actualSize = isMobile ? 128 : 256  // Use less on mobile, otherwise use prop
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const safariSizes = isMobile ? 32 : 64
+  const otherBrowserSizes = isMobile ? 128 : 256
+  const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
 
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
