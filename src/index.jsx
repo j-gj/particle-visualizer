@@ -13,7 +13,7 @@ function CanvasApp() {
       // Camera settings
       camera={{
         fov: 25,
-        position: [0, 0, 3]
+        position: [0, 0, 2.5]
       }}
 
       // WebGL context settings optimized for Safari iframes

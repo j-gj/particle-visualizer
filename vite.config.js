@@ -8,6 +8,14 @@ export default defineConfig({
       // Remove babel-plugin-glsl for now - we'll handle GLSL differently
     })
   ],
+  // Specify the entry point
+  build: {
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    }
+  },
   esbuild: {
     loader: 'jsx',
     include: /src\/.*\.[jt]sx?$/,
