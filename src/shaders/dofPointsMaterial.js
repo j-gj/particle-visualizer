@@ -11,11 +11,11 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uFocus: { value: 4 },
         uFov: { value: 45 },
         uBlur: { value: 30 },
-        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]) }, // 4 RGB colors
+        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1]) }, // 4 RGB colors
         uGradientStops: { value: new Float32Array([0.0, 0.3, 0.7, 1.0]) }, // 4 stops
         uGradientRadius: { value: 2.0 },
-        // Add performance mode toggle
-        uPerformanceMode: { value: 1.0 } // 1.0 = high performance, 0.0 = high quality
+        // Only add Safari detection for blur optimization
+        uIsSafari: { value: 0.0 }
       },
       vertexShader: `
         precision mediump float;
@@ -26,7 +26,7 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uniform float uFov;
         uniform float uBlur;
         uniform float uGradientRadius;
-        uniform float uPerformanceMode;
+        uniform float uIsSafari;
         varying float vDistance;
         varying float vGradientDistance;
         varying vec3 vWorldPosition;
@@ -38,20 +38,13 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
 
           gl_Position = projectionMatrix * mvPosition;
 
-          // Simplified distance calculation for performance mode
-          if (uPerformanceMode > 0.5) {
-            vDistance = abs(uFocus - (-mvPosition.z));
-            vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
-          } else {
-            vDistance = abs(uFocus - (-mvPosition.z));
-            vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
-          }
-          
+          vDistance = abs(uFocus - -mvPosition.z);
+          vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
           vWorldPosition = worldPosition.xyz;
 
-          // Reduce point size calculation complexity
-          float sizeFactor = mix(2.0, uBlur, uPerformanceMode);
-          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * sizeFactor;
+          // ONLY change: Reduce blur impact for Safari
+          float effectiveBlur = mix(uBlur, uBlur * 0.3, uIsSafari);
+          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * effectiveBlur;
         }
       `,
       fragmentShader: `
@@ -62,18 +55,11 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uniform vec3 uGradientColors[4];
         uniform float uGradientStops[4];
         uniform float uTime;
-        uniform float uPerformanceMode;
 
-        // Simplified gradient function for performance
-        vec3 getGradientColorFast(float t) {
+        // Keep original gradient function - NO CHANGES
+        vec3 getGradientColor(float t) {
           t = clamp(t, 0.0, 1.0);
           
-          // Use only 2 colors in performance mode
-          if (uPerformanceMode > 0.5) {
-            return mix(uGradientColors[0], uGradientColors[2], t);
-          }
-          
-          // Full gradient calculation for quality mode
           if (t <= uGradientStops[0]) {
             return uGradientColors[0];
           } else if (t <= uGradientStops[1]) {
@@ -94,21 +80,12 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
           vec2 cxy = 2.0 * gl_PointCoord - 1.0;
           if (dot(cxy, cxy) > 1.0) discard;
 
-          // Simplified alpha calculation
-          float alpha = mix(
-            (1.04 - clamp(vDistance, 0.0, 1.0)), // Full calculation
-            0.8, // Fixed alpha for performance
-            uPerformanceMode
-          );
+          // Keep original alpha calculation - NO CHANGES
+          float alpha = (1.04 - clamp(vDistance, 0.0, 1.0));
 
-          // Simplified time animation
-          float timeOffset = mix(
-            sin(uTime * 0.5) * 0.1, // Full animation
-            0.0, // No animation for performance
-            uPerformanceMode
-          );
-          
-          vec3 gradientColor = getGradientColorFast(vGradientDistance + timeOffset);
+          // Keep original time animation - NO CHANGES
+          float timeOffset = sin(uTime * 0.5) * 0.1;
+          vec3 gradientColor = getGradientColor(vGradientDistance + timeOffset);
 
           gl_FragColor = vec4(gradientColor, alpha);
         }

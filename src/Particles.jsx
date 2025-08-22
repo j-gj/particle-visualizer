@@ -22,7 +22,7 @@ export function Particles({
   blur = 30, 
   focus = 5,
   size = 256,
-  performanceMode = false,
+  isSafari = false,
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
@@ -73,17 +73,11 @@ export function Particles({
     };
   }, [gradientColors, gradientStops]);
   
-  // Frame throttling for performance mode
-  const frameCount = useRef(0)
+  // Remove frame throttling - keep original behavior
   
   // Update simulation every frame
   useFrame(({ gl, clock }) => {
     if (!simRef.current || !renderRef.current) return
-    
-    frameCount.current++
-    
-    // Skip frames in performance mode
-    if (performanceMode && frameCount.current % 3 !== 0) return
     
     // Render simulation to FBO
     gl.setRenderTarget(target)
@@ -99,16 +93,16 @@ export function Particles({
     renderRef.current.uniforms.uGradientColors.value = gradientData.colors
     renderRef.current.uniforms.uGradientStops.value = gradientData.stops
     renderRef.current.uniforms.uGradientRadius.value = gradientRadius
-    renderRef.current.uniforms.uPerformanceMode.value = performanceMode ? 1.0 : 0.0
+    renderRef.current.uniforms.uIsSafari.value = isSafari ? 1.0 : 0.0
     renderRef.current.uniforms.uTime.value = clock.elapsedTime;
     
-    // Update simulation material with throttled frequency updates
-    const targetFreq = frequency
-    const currentFreq = simRef.current.uniforms.uFrequency.value
-    const lerpSpeed = performanceMode ? 0.05 : 0.1
-    
+    // Update simulation material
     simRef.current.uniforms.uTime.value = clock.elapsedTime * speedFactor
-    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(currentFreq, targetFreq, lerpSpeed)
+    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(
+      simRef.current.uniforms.uFrequency.value, 
+      frequency, 
+      0.1
+    )
   })
   
   return (

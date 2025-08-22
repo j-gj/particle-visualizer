@@ -24,16 +24,12 @@ export default function App() {
   const isInIframe = window.self !== window.top
   const isFramer = window.location.href.includes('framer') || window.parent?.location?.href?.includes('framer')
   
-  // Detect if we're in a problematic environment (Safari + iframe/Framer)
-  const isProblematicEnvironment = (isSafari && isInIframe) || isFramer
+  // Keep original sizes, only detect Safari for blur optimization
+  const safariSizes = isMobile ? 32 : 64
+  const otherBrowserSizes = isMobile ? 128 : 368
+  const actualSize = isSafari ? safariSizes : otherBrowserSizes
   
-  // Adjust sizes based on environment
-  const safariSizes = isMobile ? 64 : 128
-  const otherBrowserSizes = isMobile ? 128 : 256
-  const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
-  console.log('isSafari', isSafari,'actualSize', actualSize)
-  
-  console.log('Environment:', { isSafari, isMobile, isInIframe, isFramer, isProblematicEnvironment, actualSize })
+  console.log('Environment:', { isSafari, isMobile, isInIframe, isFramer, actualSize })
 
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
@@ -43,10 +39,10 @@ export default function App() {
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
   
-  // Reduce default values for problematic environments
-  const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : (isProblematicEnvironment ? 0.1 : 0.3)
-  const density = densityFromUrl ? parseFloat(densityFromUrl) : (isProblematicEnvironment ? 0.05 : 0.15)
-  const speed = speedFromUrl ? parseFloat(speedFromUrl) : (isProblematicEnvironment ? 1 : 4)
+  // Keep original values, don't reduce them
+  const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
+  const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
+  const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -54,13 +50,13 @@ export default function App() {
     frequency: { value: density, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
-    blur: { value: isProblematicEnvironment ? 5 : 25, min: 0, max: 50, step: 0.1 },
+    blur: { value: 25, min: 0, max: 50, step: 0.1 },
     focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
     initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
-    performanceMode: { value: isProblematicEnvironment },
+    performanceMode: { value: false },
     // Gradient controls
     gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
     gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
@@ -76,13 +72,13 @@ export default function App() {
     frequency: density,
     speedFactor: speed,
     fov: 35,
-    blur: isProblematicEnvironment ? 5 : 21,
+    blur: 21,
     focus: 3.45,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
     initialCameraZ: 2.5,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
-    performanceMode: isProblematicEnvironment,
+    performanceMode: false,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
     gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
     gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
@@ -94,6 +90,7 @@ export default function App() {
     gradientRadius: 1.35
   }
 
+  // Remove performance mode from destructuring
   const {
     frequency,
     speedFactor,
@@ -104,7 +101,6 @@ export default function App() {
     initialCameraZ,
     rotationSpeed,
     enableVerticalRotation,
-    performanceMode,
     // Gradient controls
     gradientColor1,
     gradientColor2,
@@ -120,16 +116,8 @@ export default function App() {
   const { camera, gl } = useThree()
   const controlsRef = useRef()
 
-  // Throttle frame updates for problematic environments
-  const frameCount = useRef(0)
-  const shouldSkipFrame = isProblematicEnvironment && (frameCount.current % 2 === 0)
-
-  // Use useFrame to pass delta time to OrbitControls.update()
+  // Remove frame throttling - keep original behavior
   useFrame((state, delta) => {
-    frameCount.current++
-    
-    if (shouldSkipFrame) return
-    
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
       controlsRef.current.update(delta)
@@ -145,7 +133,7 @@ export default function App() {
 
       // Update renderer size
       gl.setSize(window.innerWidth, window.innerHeight)
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, isProblematicEnvironment ? 1 : 2))
+      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     }
 
     // Add event listener
@@ -156,7 +144,7 @@ export default function App() {
 
     // Cleanup
     return () => window.removeEventListener('resize', handleResize)
-  }, [camera, gl, isProblematicEnvironment])
+  }, [camera, gl])
 
   // Update background color (or make transparent)
   useEffect(() => {
@@ -178,10 +166,8 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
-  // Simplified GPU warmup for problematic environments
+  // Keep original GPU warmup
   useEffect(() => {
-    if (isProblematicEnvironment) return // Skip warmup in problematic environments
-    
     const warmUpGPU = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 32;
@@ -226,7 +212,7 @@ export default function App() {
     
     const timeoutId = setTimeout(warmUpGPU, 0);
     return () => clearTimeout(timeoutId);
-  }, [isProblematicEnvironment]);
+  }, []);
 
   return (
     <>
@@ -237,7 +223,7 @@ export default function App() {
         autoRotateSpeed={rotationSpeed}
         enableZoom={false}
         enableDamping={true}
-        dampingFactor={isProblematicEnvironment ? 0.1 : 0.05}
+        dampingFactor={0.05}
         enableRotate={true}
         minPolarAngle={enableVRotation ? 0 : Math.PI / 2}
         maxPolarAngle={enableVRotation ? Math.PI : Math.PI / 2}
@@ -251,7 +237,7 @@ export default function App() {
         focus={focus}
         position={[0, 0, 0]}
         size={actualSize}
-        performanceMode={performanceMode}
+        isSafari={isSafari}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
