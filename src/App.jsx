@@ -152,6 +152,62 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
+
+  //try warm up of GPU?
+  useEffect(() => {
+  const warmUpGPU = () => {
+    // Create a simple WebGL context to trigger GPU initialization
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (gl) {
+      // Force shader compilation by creating a simple shader program
+      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vertexShader, `
+        attribute vec2 position;
+        void main() {
+          gl_Position = vec4(position, 0.0, 1.0);
+        }
+      `);
+      gl.compileShader(vertexShader);
+      
+      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fragmentShader, `
+        precision mediump float;
+        void main() {
+          gl_FragColor = vec4(1.0);
+        }
+      `);
+      gl.compileShader(fragmentShader);
+      
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      
+      // Render one frame to warm up
+      gl.useProgram(program);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.finish(); // Wait for GPU operations to complete
+      
+      // Clean up
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+    }
+    
+    // Remove canvas
+    canvas.remove();
+  };
+  
+  // Run warm-up on next tick to not block initial render
+  const timeoutId = setTimeout(warmUpGPU, 0);
+  
+  return () => clearTimeout(timeoutId);
+}, []);
+
   return (
     <>
       <OrbitControls
