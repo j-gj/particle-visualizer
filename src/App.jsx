@@ -1,7 +1,7 @@
 import { OrbitControls } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Particles } from './Particles'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 
 export default function App() {
@@ -110,20 +110,6 @@ export default function App() {
     }
   })
 
-  const [particleProgress, setParticleProgress] = useState(0.2); // Start at 20%
-
-  useFrame(() => {
-    if (particleProgress < 1.0) {
-      // Gradually increase over ~2 seconds
-      setParticleProgress(prev => Math.min(prev + 0.008, 1.0));
-    }
-  });
-
-  // Calculate current settings based on progress
-  const currentSize = Math.floor((isMobile ? 128 : 256) * particleProgress);
-  const currentFrequency = frequency * (0.5 + 0.5 * particleProgress); // Start simpler
-
-
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -169,58 +155,58 @@ export default function App() {
 
   //try warm up of GPU?
   useEffect(() => {
-    const warmUpGPU = () => {
-      // Create a simple WebGL context to trigger GPU initialization
-      const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 32;
-
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (gl) {
-        // Force shader compilation by creating a simple shader program
-        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertexShader, `
+  const warmUpGPU = () => {
+    // Create a simple WebGL context to trigger GPU initialization
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (gl) {
+      // Force shader compilation by creating a simple shader program
+      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vertexShader, `
         attribute vec2 position;
         void main() {
           gl_Position = vec4(position, 0.0, 1.0);
         }
       `);
-        gl.compileShader(vertexShader);
-
-        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragmentShader, `
+      gl.compileShader(vertexShader);
+      
+      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fragmentShader, `
         precision mediump float;
         void main() {
           gl_FragColor = vec4(1.0);
         }
       `);
-        gl.compileShader(fragmentShader);
-
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-
-        // Render one frame to warm up
-        gl.useProgram(program);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.finish(); // Wait for GPU operations to complete
-
-        // Clean up
-        gl.deleteProgram(program);
-        gl.deleteShader(vertexShader);
-        gl.deleteShader(fragmentShader);
-      }
-
-      // Remove canvas
-      canvas.remove();
-    };
-
-    // Run warm-up on next tick to not block initial render
-    const timeoutId = setTimeout(warmUpGPU, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, []);
+      gl.compileShader(fragmentShader);
+      
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      
+      // Render one frame to warm up
+      gl.useProgram(program);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.finish(); // Wait for GPU operations to complete
+      
+      // Clean up
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+    }
+    
+    // Remove canvas
+    canvas.remove();
+  };
+  
+  // Run warm-up on next tick to not block initial render
+  const timeoutId = setTimeout(warmUpGPU, 0);
+  
+  return () => clearTimeout(timeoutId);
+}, []);
 
   return (
     <>
@@ -238,13 +224,12 @@ export default function App() {
       />
       <ambientLight />
       <Particles
-        frequency={currentFrequency}
+        frequency={frequency}
         speedFactor={speedFactor}
         fov={fov}
         blur={blur}
         focus={focus}
         position={[0, 0, 0]}
-        size={currentSize}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
