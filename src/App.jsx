@@ -168,53 +168,70 @@ export default function App() {
   useEffect(() => {
     const simulateDrag = () => {
       const canvas = document.querySelector('canvas');
-      if (!canvas) return;
+      if (!canvas || !controlsRef.current) return;
 
-      const startX = canvas.width / 2;
-      const startY = canvas.height / 2;
+      console.log('Starting mouse simulation for Safari performance boost...');
+
+      // Get canvas bounding rect for proper coordinate calculation
+      const rect = canvas.getBoundingClientRect();
+      const startX = rect.width / 2;
+      const startY = rect.height / 2;
       const endX = startX + 100; // Drag 100 pixels to the right
-      const steps = 20; // Number of move events
+      const steps = 20;
       let currentStep = 0;
 
-      // Dispatch the initial mousedown event
-      canvas.dispatchEvent(new MouseEvent('mousedown', {
-        clientX: startX,
-        clientY: startY,
-        bubbles: true,
-      }));
+      // Create proper pointer event properties
+      const createPointerEvent = (type, clientX, clientY, pointerId = 1) => {
+        const event = new PointerEvent(type, {
+          pointerId: pointerId,
+          clientX: clientX + rect.left,
+          clientY: clientY + rect.top,
+          button: 0, // Left mouse button
+          buttons: type === 'pointerup' ? 0 : 1, // No buttons pressed on up, left button on down/move
+          isPrimary: true,
+          bubbles: true,
+          cancelable: true
+        });
+        return event;
+      };
 
-      // A function that dispatches a series of mousemove events
+      // Start the drag with pointerdown
+      const pointerDownEvent = createPointerEvent('pointerdown', startX, startY);
+      canvas.dispatchEvent(pointerDownEvent);
+      console.log('Dispatched pointerdown at', startX, startY);
+
       const move = () => {
         if (currentStep < steps) {
-          
           currentStep++;
           const newX = startX + (endX - startX) * (currentStep / steps);
-          console.log("step", currentStep, newX)
-          canvas.dispatchEvent(new MouseEvent('mousemove', {
-            clientX: newX,
-            clientY: startY,
-            bubbles: true,
-          }));
 
-          // Schedule the next move
-          setTimeout(move, 10); // 10ms delay between steps
+          // Dispatch pointermove event
+          const pointerMoveEvent = createPointerEvent('pointermove', newX, startY);
+          canvas.dispatchEvent(pointerMoveEvent);
+
+          console.log(`Drag step ${currentStep}: moving to ${newX}`);
+
+          // Schedule next move
+          requestAnimationFrame(move);
         } else {
-          // Once the movements are complete, end the drag with a mouseup event
-          canvas.dispatchEvent(new MouseEvent('mouseup', {
-            clientX: endX,
-            clientY: startY,
-            bubbles: true,
-          }));
+          // End the drag with pointerup
+          const pointerUpEvent = createPointerEvent('pointerup', endX, startY);
+          canvas.dispatchEvent(pointerUpEvent);
+          console.log('Dispatched pointerup at', endX, startY);
+          console.log('Mouse simulation complete!');
         }
       };
 
-      // Start the drag sequence
-      move();
+      // Start the movement sequence
+      requestAnimationFrame(move);
     };
 
-    const timeoutId = setTimeout(simulateDrag, 1000); // Wait 1 second before starting
-    return () => clearTimeout(timeoutId);
-  }, []);
+    // Only run on Safari and wait a bit for everything to initialize
+    if (isSafari) {
+      const timeoutId = setTimeout(simulateDrag, 2000); // Wait 2 seconds for full initialization
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isSafari]);
 
   return (
     <>
