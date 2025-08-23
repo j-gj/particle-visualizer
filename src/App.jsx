@@ -24,7 +24,8 @@ export default function App() {
   const safariSizes = isMobile ? 128 : 256
   const otherBrowserSizes = isMobile ? 128 : 384
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
-  const shouldRotate = isSafari ? false : true;
+  // const shouldRotate = isSafari ? false : true;
+  const shouldRotate = true;
   console.log('isSafari', isSafari, 'actualSize', actualSize)
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
@@ -39,14 +40,15 @@ export default function App() {
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+  // const isDev = 'true'
   const controlValues = isDev ? useControls({
     frequency: { value: density, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
-    fov: { value: 35, min: 0, max: 200 },
-    blur: { value: 25, min: 0, max: 50, step: 0.1 },
-    focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
+    fov: { value: 41, min: 0, max: 200 },
+    blur: { value: 33, min: 0, max: 50, step: 0.1 },
+    focus: { value: 7.46, min: 3, max: 10, step: 0.01 },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
-    initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
+    initialCameraZ: { value: 6.9, min: 0.5, max: 10, step: 0.1 },
     // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
@@ -64,11 +66,11 @@ export default function App() {
     // Default values for production
     frequency: density,
     speedFactor: speed,
-    fov: 35,
-    blur: 21,
-    focus: 3.45,
+    fov: 41,
+    blur: 33,
+    focus: 7.46,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
-    initialCameraZ: 2.5,
+    initialCameraZ: 6.9,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
