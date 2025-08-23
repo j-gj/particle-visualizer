@@ -2,8 +2,8 @@ import * as THREE from 'three'
 import { useMemo, useState, useRef } from 'react'
 import { createPortal, useFrame } from '@react-three/fiber'
 import { useFBO } from '@react-three/drei'
-import './shaders/simulationMaterial'
-import './shaders/dofPointsMaterial'
+import './simulationMaterial'
+import './dofPointsMaterial'
 
 // Helper function to convert hex to RGB
 function hexToRgb(hex) {
