@@ -1,7 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas } from '@react-three/fiber'
-import './styles.css'
 import App from './App.jsx'
 
 // Create the root for React DOM
@@ -31,19 +30,12 @@ function CanvasApp() {
       }}
 
       // Performance settings
-      linear={true}                     // Linear color space
-      frameloop="always"                // Continuous rendering
+      // linear={true}                     // Linear color space
+      // frameloop="always"                // Continuous rendering
 
       // Safari iframe specific optimizations
       resize={{ scroll: false }}       // Optimize resize handling
       dpr={[1, 2]}                     // Limit pixel ratio for performance
-
-      // Additional iframe optimizations
-      // style={{
-      //   display: 'block',
-      //   width: '100%',
-      //   height: '100%'
-      // }}
     >
       <App />
     </Canvas>
