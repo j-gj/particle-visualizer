@@ -39,22 +39,23 @@ export default function App() {
 
   // Only show controls in development
   const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+  // const isDev = 'true'
   const controlValues = isDev ? useControls({
     frequency: { value: density, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
-    blur: { value: 25, min: 0, max: 50, step: 0.1 },
-    focus: { value: 3.45, min: 3, max: 7, step: 0.01 },
-    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000') },
-    initialCameraZ: { value: 2.5, min: 0.5, max: 10, step: 0.1 },
+    blur: { value: 24, min: 0, max: 50, step: 0.1 },
+    focus: { value: 8.7, min: 3, max: 10, step: 0.01 },
+    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff') },
+    initialCameraZ: { value: 7.6, min: 0.5, max: 15, step: 0.1 },
     // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
     // Gradient controls
-    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#F0F4FF' },
+    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#99A6F0' },
     gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
     gradientColor3: { value: formatHexColor(gc3FromUrl) || '#372CD5' },
-    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#F0F4FF' },
+    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#070245' },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
@@ -64,11 +65,11 @@ export default function App() {
     // Default values for production
     frequency: density,
     speedFactor: speed,
-    fov: 35,
+    fov: 15,
     blur: 21,
-    focus: 3.45,
+    focus: 8.7,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
-    initialCameraZ: 2.5,
+    initialCameraZ: 6,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
     gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
