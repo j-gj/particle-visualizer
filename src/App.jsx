@@ -108,15 +108,15 @@ export default function App() {
 
   const { camera } = useThree() // Get camera reference for position control
   const controlsRef = useRef()
-  const frameCount = useRef(0);
+  // const frameCount = useRef(0);
 
   // Use useFrame to pass delta time to OrbitControls.update()
   useFrame((state, delta) => {
-    frameCount.current++;
-    // Skip frames on Safari in iframe to reduce load
-    if (isSafari && frameCount.current % 2 === 0) {
-      return; // Skip every other frame
-    }
+    // frameCount.current++;
+    // // Skip frames on Safari in iframe to reduce load
+    // if (isSafari && frameCount.current % 2 === 0) {
+    //   return; // Skip every other frame
+    // }
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
       controlsRef.current.update(delta)
