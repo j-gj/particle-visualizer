@@ -1,4 +1,4 @@
-import * as THREE from 'three/webgpu';
+import { WebGPURenderer } from 'three/webgpu'
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
@@ -12,7 +12,7 @@ function CanvasApp() {
     <Canvas
       camera={{ fov: 25, position: [0, 0, 2.5] }}
       // Use WebGPURenderer instead of implicit WebGL
-      renderer={() => new THREE.WebGPURenderer({
+      renderer={() => new WebGPURenderer({
         alpha: true,
         antialias: true,
         // WebGPU-specific: Enables async compilation for faster startup

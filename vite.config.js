@@ -22,6 +22,7 @@ export default defineConfig({
     exclude: []
   },
   optimizeDeps: {
+    include: ['three', 'three/webgpu', 'three/tsl'],
     esbuildOptions: {
       loader: {
         '.js': 'jsx'
