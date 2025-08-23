@@ -1,4 +1,3 @@
-import { WebGPURenderer } from 'three/webgpu'
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
@@ -11,15 +10,17 @@ function CanvasApp() {
   return (
     <Canvas
       camera={{ fov: 25, position: [0, 0, 2.5] }}
-      // Use WebGPURenderer instead of implicit WebGL
-      renderer={() => new WebGPURenderer({
-        alpha: true,
-        antialias: true,
-        // WebGPU-specific: Enables async compilation for faster startup
-        forceSync: false,
-        // Safari optimizations: Reduces power draw
-        powerPreference: 'high-performance', // Still applicable
-      })}
+      gl={{
+        alpha: false,                      // Unless you need transparent background
+        antialias: false,                  // Use postprocessing AA instead
+        powerPreference: "high-performance",
+        desynchronized: true,              // Chrome benefit, ignored by Safari
+        premultipliedAlpha: true,          // Default; better Safari compositing
+        preserveDrawingBuffer: false,      // Faster, lower memory
+        failIfMajorPerformanceCaveat: false,
+        stencil: false,
+        depth: true
+      }}
       linear={true}
       frameloop="always"
       resize={{ scroll: false }}
