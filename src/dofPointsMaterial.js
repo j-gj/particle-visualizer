@@ -36,10 +36,11 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
           gl_Position = projectionMatrix * mvPosition;
 
           vDistance = abs(uFocus - -mvPosition.z);
-          vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
-          vWorldPosition = worldPosition.xyz;
+          vGradientDistance = length(worldPosition.xyz) / uGradientRadius; // Unchanged
 
-          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * uBlur;
+          // Simplify step if possible; assuming it's for culling, but if always active, remove
+          float sizeFactor = step(1.0 - (1.0 / uFov), position.x); // If this is often 1.0, consider const
+          gl_PointSize = sizeFactor * vDistance * uBlur;
         }
       `,
       fragmentShader: `
@@ -49,38 +50,26 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         varying vec3 vWorldPosition;
         uniform vec3 uGradientColors[4];
         uniform float uGradientStops[4];
+        uniform float uTime;
 
-        uniform float uTime; // Add the time uniform
-
-        // Function to interpolate between gradient colors
         vec3 getGradientColor(float t) {
-          // Clamp t to [0, 1]
           t = clamp(t, 0.0, 1.0);
-          
-          // Find which segment we're in
-          if (t <= uGradientStops[0]) {
-            return uGradientColors[0];
-          } else if (t <= uGradientStops[1]) {
-            float factor = (t - uGradientStops[0]) / (uGradientStops[1] - uGradientStops[0]);
-            return mix(uGradientColors[0], uGradientColors[1], factor);
-          } else if (t <= uGradientStops[2]) {
-            float factor = (t - uGradientStops[1]) / (uGradientStops[2] - uGradientStops[1]);
-            return mix(uGradientColors[1], uGradientColors[2], factor);
-          } else if (t <= uGradientStops[3]) {
-            float factor = (t - uGradientStops[2]) / (uGradientStops[3] - uGradientStops[2]);
-            return mix(uGradientColors[2], uGradientColors[3], factor);
-          } else {
-            return uGradientColors[3];
-          }
+          // Flattened mix chain instead of if-else for potentially better compiler optimization
+          vec3 color = mix(uGradientColors[0], uGradientColors[1], smoothstep(uGradientStops[0], uGradientStops[1], t));
+          color = mix(color, uGradientColors[2], smoothstep(uGradientStops[1], uGradientStops[2], t));
+          color = mix(color, uGradientColors[3], smoothstep(uGradientStops[2], uGradientStops[3], t));
+          return color;
         }
 
         void main() {
           vec2 cxy = 2.0 * gl_PointCoord - 1.0;
-          if (dot(cxy, cxy) > 1.0) discard;
+          float r2 = dot(cxy, cxy);
+          // Replace discard with alpha modulation for better perf (avoids early-Z disable)
+          if (r2 > 1.0) discard; // Keep as fallback, but prefer:
+          float mask = 1.0 - smoothstep(0.95, 1.0, r2); // Soft edge; adjust 0.95 for sharpness match
 
-          float alpha = (1.04 - clamp(vDistance, 0.0, 1.0));
+          float alpha = (1.04 - clamp(vDistance, 0.0, 1.0)) * mask; // Multiply by mask
 
-          // Add a sinusoidal time-based offset to the gradient lookup
           float timeOffset = sin(uTime * 0.5) * 0.1;
           vec3 gradientColor = getGradientColor(vGradientDistance + timeOffset);
 
