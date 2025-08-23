@@ -1,54 +1,33 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import { Canvas } from '@react-three/fiber'
-import './styles.css'
-import App from './App.jsx'
+import * as THREE from 'three/webgpu';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Canvas } from '@react-three/fiber';
+import './styles.css';
+import App from './App.jsx';
 
-// Create the root for React DOM
-const root = createRoot(document.getElementById('root'))
+const root = createRoot(document.getElementById('root'));
 
 function CanvasApp() {
   return (
     <Canvas
-      // Camera settings
-      camera={{
-        fov: 25,
-        position: [0, 0, 2.5]
-      }}
-
-      // WebGL context settings optimized for Safari iframes
-      gl={{
+      camera={{ fov: 25, position: [0, 0, 2.5] }}
+      // Use WebGPURenderer instead of implicit WebGL
+      renderer={() => new THREE.WebGPURenderer({
         alpha: true,
         antialias: true,
-        powerPreference: "high-performance",
-        // Safari iframe optimizations
-        desynchronized: true,           // Reduces input lag
-        premultipliedAlpha: false,      // Better color handling
-        preserveDrawingBuffer: false,   // Save memory
-        failIfMajorPerformanceCaveat: false, // Don't fall back to software rendering
-        stencil: false,                 // Disable stencil buffer if not needed
-        depth: true                     // Keep depth buffer for 3D particles
-      }}
-
-      // Performance settings
-      linear={true}                     // Linear color space
-      frameloop="always"                // Continuous rendering
-
-      // Safari iframe specific optimizations
-      resize={{ scroll: false }}       // Optimize resize handling
-      dpr={[1, 2]}                     // Limit pixel ratio for performance
-
-      // Additional iframe optimizations
-      // style={{
-      //   display: 'block',
-      //   width: '100%',
-      //   height: '100%'
-      // }}
+        // WebGPU-specific: Enables async compilation for faster startup
+        forceSync: false,
+        // Safari optimizations: Reduces power draw
+        powerPreference: 'high-performance', // Still applicable
+      })}
+      linear={true}
+      frameloop="always"
+      resize={{ scroll: false }}
+      dpr={[1, 2]}
     >
       <App />
     </Canvas>
-  )
+  );
 }
 
-// Render the Canvas component
-root.render(<CanvasApp />)
+root.render(<CanvasApp />);

@@ -1,283 +1,125 @@
-import * as THREE from 'three'
-import { extend } from '@react-three/fiber'
+import * as THREE from 'three/webgpu';
+import { tslFn, vec3, vec4, float, storage, uniform } from 'three/tsl';
 
-function getRandomSphere(count, size) {
-  const data = new Float32Array(count * 4)
-  for (let i = 0; i < count * 4; i += 4) {
-    // Random point in sphere
-    data[i] = (Math.random() - 0.5) * 4
-    data[i + 1] = (Math.random() - 0.5) * 4
-    data[i + 2] = (Math.random() - 0.5) * 4
-    data[i + 3] = 1
-  }
-  return data
-}
+// Optimized Simplex Noise in TSL
+const mod289 = tslFn(([x]) => {
+  return x.sub(x.div(289.0).floor().mul(289.0));
+});
 
-// 3D Simplex noise implementation from the reference
-const simplexNoise = `
-vec3 mod289(vec3 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+const permute = tslFn(([x]) => {
+  return mod289(x.mul(34.0).add(1.0).mul(x));
+});
 
-vec4 mod289(vec4 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+const taylorInvSqrt = tslFn(([r]) => {
+  return float(1.79284291400159).sub(float(0.85373472095314).mul(r));
+});
 
-vec4 permute(vec4 x) {
-     return mod289(((x*34.0)+1.0)*x);
-}
+const snoise = tslFn(([v]) => {
+  const C = vec3(float(1.0 / 6.0), float(1.0 / 3.0));
+  const D = vec4(0.0, 0.5, 1.0, 2.0);
 
-vec4 taylorInvSqrt(vec4 r) {
-  return 1.79284291400159 - 0.85373472095314 * r;
-}
+  const i = v.add(v.dot(C.yyy)).floor();
+  const x0 = v.sub(i).add(i.dot(C.xxx));
 
-float snoise(vec3 v) {
-  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-  const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+  const g = x0.yzx.step(x0.xyz);
+  const l = float(1.0).sub(g);
+  const i1 = g.xyz.min(l.zxy);
+  const i2 = g.xyz.max(l.zxy);
 
-  // First corner
-  vec3 i  = floor(v + dot(v, C.yyy) );
-  vec3 x0 =   v - i + dot(i, C.xxx) ;
+  const x1 = x0.sub(i1).add(C.xxx);
+  const x2 = x0.sub(i2).add(C.yyy);
+  const x3 = x0.sub(D.yyy);
 
-  // Other corners
-  vec3 g = step(x0.yzx, x0.xyz);
-  vec3 l = 1.0 - g;
-  vec3 i1 = min( g.xyz, l.zxy );
-  vec3 i2 = max( g.xyz, l.zxy );
+  const i_mod = mod289(i);
+  const p = permute(
+    permute(permute(i_mod.z.add(vec4(0.0, i1.z, i2.z, 1.0)))
+      .add(i_mod.y)
+      .add(vec4(0.0, i1.y, i2.y, 1.0)))
+      .add(i_mod.x)
+      .add(vec4(0.0, i1.x, i2.x, 1.0))
+  );
 
-  vec3 x1 = x0 - i1 + C.xxx;
-  vec3 x2 = x0 - i2 + C.yyy;
-  vec3 x3 = x0 - D.yyy;
+  const n_ = float(0.142857142857);
+  const ns = n_.mul(D.wyz).sub(D.xzx);
 
-  // Permutations
-  i = mod289(i);
-  vec4 p = permute( permute( permute(
-             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
-           + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+  const j = p.sub(p.mul(ns.z).mul(ns.z).mul(49.0).floor());
 
-  // Gradients
-  float n_ = 0.142857142857;
-  vec3  ns = n_ * D.wyz - D.xzx;
+  const x_ = j.mul(ns.z).floor();
+  const y_ = j.sub(x_.mul(7.0)).floor();
 
-  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+  const x = x_.mul(ns.x).add(ns.yyyy);
+  const y = y_.mul(ns.x).add(ns.yyyy);
+  const h = float(1.0).sub(x.abs()).sub(y.abs());
 
-  vec4 x_ = floor(j * ns.z);
-  vec4 y_ = floor(j - 7.0 * x_ );
+  const b0 = vec4(x.xy, y.xy);
+  const b1 = vec4(x.zw, y.zw);
 
-  vec4 x = x_ *ns.x + ns.yyyy;
-  vec4 y = y_ *ns.x + ns.yyyy;
-  vec4 h = 1.0 - abs(x) - abs(y);
+  const s0 = b0.floor().mul(2.0).add(1.0);
+  const s1 = b1.floor().mul(2.0).add(1.0);
+  const sh = h.step(float(0.0)).negate();
 
-  vec4 b0 = vec4( x.xy, y.xy );
-  vec4 b1 = vec4( x.zw, y.zw );
+  const a0 = b0.xzyw.add(s0.xzyw.mul(sh.xxyy));
+  const a1 = b1.xzyw.add(s1.xzyw.mul(sh.zzww));
 
-  vec4 s0 = floor(b0)*2.0 + 1.0;
-  vec4 s1 = floor(b1)*2.0 + 1.0;
-  vec4 sh = -step(h, vec4(0.0));
+  const p0 = vec3(a0.xy, h.x);
+  const p1 = vec3(a0.zw, h.y);
+  const p2 = vec3(a1.xy, h.z);
+  const p3 = vec3(a1.zw, h.w);
 
-  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+  const norm = taylorInvSqrt(vec4(p0.dot(p0), p1.dot(p1), p2.dot(p2), p3.dot(p3)));
+  p0.assign(p0.mul(norm.x));
+  p1.assign(p1.mul(norm.y));
+  p2.assign(p2.mul(norm.z));
+  p3.assign(p3.mul(norm.w));
 
-  vec3 p0 = vec3(a0.xy,h.x);
-  vec3 p1 = vec3(a0.zw,h.y);
-  vec3 p2 = vec3(a1.xy,h.z);
-  vec3 p3 = vec3(a1.zw,h.w);
+  const m = vec4(x0.dot(x0), x1.dot(x1), x2.dot(x2), x3.dot(x3)).max(float(0.6)).max(float(0));
+  m.assign(m.mul(m));
 
-  // Normalise gradients
-  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-  p0 *= norm.x;
-  p1 *= norm.y;
-  p2 *= norm.z;
-  p3 *= norm.w;
+  return float(42.0).mul(m.mul(m).dot(vec4(p0.dot(x0), p1.dot(x1), p2.dot(x2), p3.dot(x3))));
+});
 
-  // Mix final noise value
-  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-  m = m * m;
-  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
-                                dot(p2,x2), dot(p3,x3) ) );
-}
-`
+const snoiseVec3 = tslFn(([x]) => {
+  const s = snoise(x);
+  const s1 = snoise(vec3(x.y.sub(19.1), x.z.add(33.4), x.x.add(47.2)));
+  const s2 = snoise(vec3(x.z.add(74.2), x.x.sub(124.5), x.y.add(99.4)));
+  return vec3(s, s1, s2);
+});
 
-// snoiseVec3 helper
-const snoiseVec3 = `
-vec3 snoiseVec3(vec3 x) {
-  float s  = snoise(vec3( x ));
-  float s1 = snoise(vec3( x.y - 19.1 , x.z + 33.4 , x.x + 47.2 ));
-  float s2 = snoise(vec3( x.z + 74.2 , x.x - 124.5 , x.y + 99.4 ));
-  vec3 c = vec3( s , s1 , s2 );
-  return c;
-}
-`
+const curlNoise = tslFn(([p]) => {
+  const e = float(0.1);
+  const dx = vec3(e, 0.0, 0.0);
+  const dy = vec3(0.0, e, 0.0);
+  const dz = vec3(0.0, 0.0, e);
 
-// Curl noise from the reference
-const curlNoise = `
-vec3 curlNoise(vec3 p) {
-  const float e = .1;
-  vec3 dx = vec3( e   , 0.0 , 0.0 );
-  vec3 dy = vec3( 0.0 , e   , 0.0 );
-  vec3 dz = vec3( 0.0 , 0.0 , e   );
+  const p_x0 = snoiseVec3(p.sub(dx));
+  const p_x1 = snoiseVec3(p.add(dx));
+  const p_y0 = snoiseVec3(p.sub(dy));
+  const p_y1 = snoiseVec3(p.add(dy));
+  const p_z0 = snoiseVec3(p.sub(dz));
+  const p_z1 = snoiseVec3(p.add(dz));
 
-  vec3 p_x0 = snoiseVec3( p - dx );
-  vec3 p_x1 = snoiseVec3( p + dx );
-  vec3 p_y0 = snoiseVec3( p - dy );
-  vec3 p_y1 = snoiseVec3( p + dy );
-  vec3 p_z0 = snoiseVec3( p - dz );
-  vec3 p_z1 = snoiseVec3( p + dz );
+  const x = p_y1.z.sub(p_y0.z).sub(p_z1.y).add(p_z0.y);
+  const y = p_z1.x.sub(p_z0.x).sub(p_x1.z).add(p_x0.z);
+  const z = p_x1.y.sub(p_x0.y).sub(p_y1.x).add(p_y0.x);
 
-  float x = p_y1.z - p_y0.z - p_z1.y + p_z0.y;
-  float y = p_z1.x - p_z0.x - p_x1.z + p_x0.z;
-  float z = p_x1.y - p_x0.y - p_y1.x + p_y0.x;
+  return vec3(x, y, z).mul(float(1.0).div(e.mul(2.0))).normalize();
+});
 
-  const float divisor = 1.0 / ( 2.0 * e );
-  return normalize( vec3( x , y , z ) * divisor );
-}
-`
+// Simulation compute function
+const SimulationMaterial = tslFn(([positionsStorage, uFrequency, uTime]) => {
+  const index = THREE.computeIndex;
+  let pos = positionsStorage.element(index).xyz;
+  let curlPos = pos;
 
-// Classic Perlin noise (used for mixing)
-const classicNoise = `
-vec3 mod289_c(vec3 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+  const time = uTime.mul(0.015);
+  pos.assign(curlNoise(pos.mul(uFrequency).add(time)));
+  curlPos.assign(curlNoise(curlPos.mul(uFrequency).add(time)));
+  curlPos.addAssign(curlNoise(curlPos.mul(uFrequency.mul(2))).mul(0.5));
+  curlPos.addAssign(curlNoise(curlPos.mul(uFrequency.mul(4))).mul(0.25));
 
-vec4 mod289_c(vec4 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+  const mixed = pos.mix(curlPos, snoise(pos.add(time)).mul(0.5).add(0.5));
 
-vec4 permute_c(vec4 x) {
-  return mod289_c(((x*34.0)+1.0)*x);
-}
+  positionsStorage.element(index).assign(vec4(mixed, 1));
+});
 
-vec4 taylorInvSqrt_c(vec4 r) {
-  return 1.79284291400159 - 0.85373472095314 * r;
-}
-
-vec3 fade(vec3 t) {
-  return t*t*t*(t*(t*6.0-15.0)+10.0);
-}
-
-float cnoise(vec3 P) {
-  vec3 Pi0 = floor(P);
-  vec3 Pi1 = Pi0 + vec3(1.0);
-  Pi0 = mod289_c(Pi0);
-  Pi1 = mod289_c(Pi1);
-  vec3 Pf0 = fract(P);
-  vec3 Pf1 = Pf0 - vec3(1.0);
-  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
-  vec4 iy = vec4(Pi0.yy, Pi1.yy);
-  vec4 iz0 = Pi0.zzzz;
-  vec4 iz1 = Pi1.zzzz;
-
-  vec4 ixy = permute_c(permute_c(ix) + iy);
-  vec4 ixy0 = permute_c(ixy + iz0);
-  vec4 ixy1 = permute_c(ixy + iz1);
-
-  vec4 gx0 = ixy0 * (1.0 / 7.0);
-  vec4 gy0 = fract(floor(gx0) * (1.0 / 7.0)) - 0.5;
-  gx0 = fract(gx0);
-  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
-  vec4 sz0 = step(gz0, vec4(0.0));
-  gx0 -= sz0 * (step(0.0, gx0) - 0.5);
-  gy0 -= sz0 * (step(0.0, gy0) - 0.5);
-
-  vec4 gx1 = ixy1 * (1.0 / 7.0);
-  vec4 gy1 = fract(floor(gx1) * (1.0 / 7.0)) - 0.5;
-  gx1 = fract(gx1);
-  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
-  vec4 sz1 = step(gz1, vec4(0.0));
-  gx1 -= sz1 * (step(0.0, gx1) - 0.5);
-  gy1 -= sz1 * (step(0.0, gy1) - 0.5);
-
-  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
-  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
-  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
-  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
-  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
-  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
-  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
-  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
-
-  vec4 norm0 = taylorInvSqrt_c(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
-  g000 *= norm0.x;
-  g010 *= norm0.y;
-  g100 *= norm0.z;
-  g110 *= norm0.w;
-  vec4 norm1 = taylorInvSqrt_c(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
-  g001 *= norm1.x;
-  g011 *= norm1.y;
-  g101 *= norm1.z;
-  g111 *= norm1.w;
-
-  float n000 = dot(g000, Pf0);
-  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
-  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
-  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
-  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
-  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
-  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
-  float n111 = dot(g111, Pf1);
-
-  vec3 fade_xyz = fade(Pf0);
-  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
-  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
-  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x);
-  return 2.2 * n_xyz;
-}
-`
-
-class SimulationMaterial extends THREE.ShaderMaterial {
-  constructor(size = 512) {
-    const positionsTexture = new THREE.DataTexture(
-      getRandomSphere(size * size, 1), 
-      size, 
-      size, 
-      THREE.RGBAFormat, 
-      THREE.FloatType
-    )
-    positionsTexture.needsUpdate = true
-
-    super({
-      uniforms: {
-        positions: { value: positionsTexture },
-        uFrequency: { value: 0.25 },
-        uTime: { value: 0 }
-      },
-      vertexShader: `
-        precision mediump float;
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        precision mediump float;
-        uniform float uTime;
-        uniform float uFrequency;
-        uniform sampler2D positions;
-        varying vec2 vUv;
-        
-        ${simplexNoise}
-        ${snoiseVec3}
-        ${curlNoise}
-        ${classicNoise}
-        
-        void main() {
-          float time = uTime * 0.015;
-          vec3 pos = texture2D(positions, vUv).rgb;
-          vec3 curlPos = texture2D(positions, vUv).rgb;
-
-          pos = curlNoise(pos * uFrequency + time);
-          curlPos = curlNoise(curlPos * uFrequency + time);
-          curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
-          curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
-          curlPos += curlNoise(curlPos * uFrequency * 8.0) * 0.125;
-          
-          gl_FragColor = vec4(mix(pos, curlPos, cnoise(pos + time)), 1.0);
-        }
-      `
-    })
-  }
-}
-
-extend({ SimulationMaterial })
+export { SimulationMaterial };

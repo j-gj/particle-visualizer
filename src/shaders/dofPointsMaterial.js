@@ -1,7 +1,8 @@
-import * as THREE from 'three'
-import { extend } from '@react-three/fiber'
+import * as THREE from 'three/webgpu';
+import { NodeMaterial, attribute, uniform, varying, vec3, vec4, float, texture, modelViewMatrix, projectionMatrix, modelMatrix, smoothstep, sin, clamp, mix } from 'three/tsl';
+import { extend } from '@react-three/fiber';
 
-class DepthOfFieldMaterial extends THREE.ShaderMaterial {
+class DepthOfFieldMaterial extends NodeMaterial {
   constructor() {
     super({
       uniforms: {
@@ -11,87 +12,70 @@ class DepthOfFieldMaterial extends THREE.ShaderMaterial {
         uFocus: { value: 4 },
         uFov: { value: 45 },
         uBlur: { value: 30 },
-        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]) }, // 4 RGB colors
-        uGradientStops: { value: new Float32Array([0.0, 0.3, 0.7, 1.0]) }, // 4 stops
-        uGradientRadius: { value: 2.0 }
+        uGradientColors: { value: new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]) },
+        uGradientStops: { value: new Float32Array([0.0, 0.3, 0.7, 1.0]) },
+        uGradientRadius: { value: 2.0 },
       },
-      vertexShader: `
-        precision mediump float;
-        uniform sampler2D positions;
-        uniform float pointSize;
-        uniform float uTime;
-        uniform float uFocus;
-        uniform float uFov;
-        uniform float uBlur;
-        uniform float uGradientRadius;
-        varying float vDistance;
-        varying float vGradientDistance;
-        varying vec3 vWorldPosition;
+    });
 
-        void main() {
-          vec3 pos = texture2D(positions, position.xy).xyz;
-          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-          vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+    // Vertex shader in TSL
+    const vertexNode = (() => {
+      const pos = texture(uniform('positions'), attribute('position').xy).xyz;
+      const mvPosition = modelViewMatrix.mul(vec4(pos, 1));
+      const worldPosition = modelMatrix.mul(vec4(pos, 1));
 
-          gl_Position = projectionMatrix * mvPosition;
+      const vDistance = varying(float(uniform('uFocus').sub(mvPosition.z.negate()).abs()), 'vDistance');
+      const vGradientDistance = varying(float(worldPosition.xyz.length().div(uniform('uGradientRadius'))), 'vGradientDistance');
+      const vWorldPosition = varying(worldPosition.xyz, 'vWorldPosition');
 
-          vDistance = abs(uFocus - -mvPosition.z);
-          vGradientDistance = length(worldPosition.xyz) / uGradientRadius;
-          vWorldPosition = worldPosition.xyz;
+      const sizeFactor = float(uniform('uFov').recip().negate().add(1).step(attribute('position').x));
+      THREE.position.assign(projectionMatrix.mul(mvPosition));
+      THREE.pointSize.assign(sizeFactor.mul(vDistance).mul(uniform('uBlur')));
 
-          gl_PointSize = (step(1.0 - (1.0 / uFov), position.x)) * vDistance * uBlur;
-        }
-      `,
-      fragmentShader: `
-        precision mediump float;
-        varying float vDistance;
-        varying float vGradientDistance;
-        varying vec3 vWorldPosition;
-        uniform vec3 uGradientColors[4];
-        uniform float uGradientStops[4];
+      return null; // TSL vertex doesn't need return
+    })();
 
-        uniform float uTime; // Add the time uniform
+    // Fragment shader in TSL
+    const getGradientColor = (() => {
+      const t = float().clamp(0, 1);
+      const color = mix(
+        uniform('uGradientColors').slice(0, 3),
+        uniform('uGradientColors').slice(3, 6),
+        smoothstep(uniform('uGradientStops').slice(0, 1), uniform('uGradientStops').slice(1, 2), t)
+      );
+      const color2 = mix(
+        color,
+        uniform('uGradientColors').slice(6, 9),
+        smoothstep(uniform('uGradientStops').slice(1, 2), uniform('uGradientStops').slice(2, 3), t)
+      );
+      return mix(
+        color2,
+        uniform('uGradientColors').slice(9, 12),
+        smoothstep(uniform('uGradientStops').slice(2, 3), uniform('uGradientStops').slice(3, 4), t)
+      );
+    })();
 
-        // Function to interpolate between gradient colors
-        vec3 getGradientColor(float t) {
-          // Clamp t to [0, 1]
-          t = clamp(t, 0.0, 1.0);
-          
-          // Find which segment we're in
-          if (t <= uGradientStops[0]) {
-            return uGradientColors[0];
-          } else if (t <= uGradientStops[1]) {
-            float factor = (t - uGradientStops[0]) / (uGradientStops[1] - uGradientStops[0]);
-            return mix(uGradientColors[0], uGradientColors[1], factor);
-          } else if (t <= uGradientStops[2]) {
-            float factor = (t - uGradientStops[1]) / (uGradientStops[2] - uGradientStops[1]);
-            return mix(uGradientColors[1], uGradientColors[2], factor);
-          } else if (t <= uGradientStops[3]) {
-            float factor = (t - uGradientStops[2]) / (uGradientStops[3] - uGradientStops[2]);
-            return mix(uGradientColors[2], uGradientColors[3], factor);
-          } else {
-            return uGradientColors[3];
-          }
-        }
+    const fragmentNode = (() => {
+      const cxy = vec3(gl_PointCoord.mul(2).sub(1));
+      const r2 = cxy.dot(cxy);
+      const mask = float(1).sub(smoothstep(float(0.95), float(1), r2));
 
-        void main() {
-          vec2 cxy = 2.0 * gl_PointCoord - 1.0;
-          if (dot(cxy, cxy) > 1.0) discard;
+      const vDistance = varying(float(), 'vDistance');
+      const vGradientDistance = varying(float(), 'vGradientDistance');
+      const alpha = float(1.04).sub(clamp(vDistance, 0, 1)).mul(mask);
 
-          float alpha = (1.04 - clamp(vDistance, 0.0, 1.0));
+      const timeOffset = sin(uniform('uTime').mul(0.5)).mul(0.1);
+      const gradientColor = getGradientColor(vGradientDistance.add(timeOffset));
 
-          // Add a sinusoidal time-based offset to the gradient lookup
-          float timeOffset = sin(uTime * 0.5) * 0.1;
-          vec3 gradientColor = getGradientColor(vGradientDistance + timeOffset);
+      return vec4(gradientColor, alpha);
+    })();
 
-          gl_FragColor = vec4(gradientColor, alpha);
-        }
-      `,
-      transparent: true,
-      blending: THREE.NormalBlending,
-      depthWrite: false
-    })
+    this.vertexNode = vertexNode;
+    this.fragmentNode = fragmentNode;
+    this.transparent = true;
+    this.blending = THREE.NormalBlending;
+    this.depthWrite = false;
   }
 }
 
-extend({ DepthOfFieldMaterial })
+extend({ DepthOfFieldMaterial });
