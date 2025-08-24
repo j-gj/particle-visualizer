@@ -206,7 +206,7 @@ class SimulationMaterial extends THREE.ShaderMaterial {
           pos = curlNoise(pos * uFrequency + time);
           curlPos = curlNoise(curlPos * uFrequency + time);
           curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
-          curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
+          // curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
           // Remove highest octave: saves 3 snoise calls, minor detail loss
 
           // Replace cnoise with snoise for faster mix (adjust scale if needed)
