@@ -45,13 +45,91 @@ export function Particles({
   const [positions] = useState(() => new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0]))
   const [uvs] = useState(() => new Float32Array([0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0]))
   
-  const target = useFBO(size, size, {
+  // const target = useFBO(size, size, {
+  //   minFilter: THREE.NearestFilter,
+  //   magFilter: THREE.NearestFilter,
+  //   format: THREE.RGBAFormat,
+  //   stencilBuffer: false,
+  //   type: THREE.FloatType
+  // })
+
+   // Main FBO
+  const target = useFBO(fboSize, fboSize, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat,
+    stencilBuffer: false,
+    type: THREE.FloatType,
+    texture: new THREE.DataTexture(
+      new Float32Array(fboSize * fboSize * 4).fill(0),
+      fboSize,
+      fboSize,
+      THREE.RGBAFormat,
+      THREE.FloatType
+    )
+  })
+
+  // Tiny FBO for shader precompilation
+  const precompileFBO = useFBO(4, 4, {
     minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter,
     format: THREE.RGBAFormat,
     stencilBuffer: false,
     type: THREE.FloatType
   })
+
+  // Precompile shaders on mount
+  useEffect(() => {
+    if (!simRef.current || !renderRef.current) return
+    const tempScene = new THREE.Scene()
+    const tempMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.ShaderMaterial({
+        vertexShader: simRef.current.vertexShader,
+        fragmentShader: simRef.current.fragmentShader,
+        uniforms: { ...simRef.current.uniforms }
+      })
+    )
+    tempScene.add(tempMesh)
+    gl.setRenderTarget(precompileFBO)
+    gl.clear()
+    gl.render(tempScene, camera)
+    // Precompile DepthOfFieldMaterial
+    tempMesh.material = new THREE.ShaderMaterial({
+      vertexShader: renderRef.current.vertexShader,
+      fragmentShader: renderRef.current.fragmentShader,
+      uniforms: { ...renderRef.current.uniforms }
+    })
+    gl.render(tempScene, camera)
+    gl.setRenderTarget(null)
+  }, [gl, camera])
+
+  // Delay initial render and scale FBO size
+  useEffect(() => {
+    setTimeout(() => {
+      setReady(true)
+      if (isSafari) {
+        setFboSize(size) // Scale to full size after 1s
+      }
+    }, 500)
+  }, [size, isSafari])
+
+  // Set canvas background immediately
+  useEffect(() => {
+    const canvas = document.querySelector('canvas')
+    if (canvas && canvas.parentElement) {
+      if (transparentBg) {
+        canvas.parentElement.style.background = 'transparent'
+      } else {
+        canvas.parentElement.style.background = backgroundColor
+      }
+    }
+  }, [backgroundColor, transparentBg])
+
+
+
+
+
   
   // Generate particle positions as UV coordinates
   const particles = useMemo(() => {
@@ -116,21 +194,6 @@ export function Particles({
       0.1
     )
   })
-
-  //delay start
-  useEffect(() => { setTimeout(() => setReady(true), 500); }, []);
-
-  // Set canvas background immediately
-  useEffect(() => {
-    const canvas = document.querySelector('canvas')
-    if (canvas && canvas.parentElement) {
-      if (transparentBg) {
-        canvas.parentElement.style.background = 'transparent'
-      } else {
-        canvas.parentElement.style.background = backgroundColor
-      }
-    }
-  }, [backgroundColor, transparentBg])
   
   return (
     <>
