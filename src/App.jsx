@@ -169,6 +169,8 @@ export default function App() {
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
         gradientRadius={gradientRadius}
+        backgroundColor={backgroundColor}
+        transparentBg={transparentBg}
       />
     </>
   )

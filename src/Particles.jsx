@@ -25,6 +25,8 @@ export function Particles({
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
   gradientStops = [0.0, 0.3, 0.7, 1.0],
   gradientRadius = 2.0,
+  backgroundColor = '#000000', // Add prop to receive from App.jsx
+  transparentBg = false, // Add prop for transparency
   ...props 
 }) {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -117,6 +119,18 @@ export function Particles({
 
   //delay start
   useEffect(() => { setTimeout(() => setReady(true), 500); }, []);
+
+  // Set canvas background immediately
+  useEffect(() => {
+    const canvas = document.querySelector('canvas')
+    if (canvas && canvas.parentElement) {
+      if (transparentBg) {
+        canvas.parentElement.style.background = 'transparent'
+      } else {
+        canvas.parentElement.style.background = backgroundColor
+      }
+    }
+  }, [backgroundColor, transparentBg])
   
   return (
     <>
@@ -133,12 +147,14 @@ export function Particles({
       )}
       
       {/* Points using FBO texture for positions */}
-      <points {...props}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" count={particles.length / 3} array={particles} itemSize={3} />
-        </bufferGeometry>
-        <depthOfFieldMaterial ref={renderRef} />
-      </points>
+      {ready && (
+        <points {...props}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" count={particles.length / 3} array={particles} itemSize={3} />
+          </bufferGeometry>
+          <depthOfFieldMaterial ref={renderRef} />
+        </points>
+      )}
     </>
   )
 }
