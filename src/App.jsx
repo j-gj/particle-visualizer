@@ -122,7 +122,6 @@ export default function App() {
     }
   })
 
-
   // Handle background color for transparent mode
   useEffect(() => {
     if (transparentBg) {

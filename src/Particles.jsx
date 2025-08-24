@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { createPortal, useFrame, useThree } from '@react-three/fiber'
+import { createPortal, useFrame } from '@react-three/fiber'
 import { useFBO } from '@react-three/drei'
 import './simulationMaterial'
 import './dofPointsMaterial'
@@ -15,11 +15,11 @@ function hexToRgb(hex) {
   } : null;
 }
 
-export function Particles({
+export function Particles({ 
   frequency = 0.2,
-  speedFactor = 50,
-  fov = 60,
-  blur = 30,
+  speedFactor = 50, 
+  fov = 60, 
+  blur = 30, 
   focus = 5,
   size = 256, //will use what App.jsx gives it
   gradientColors = ['#ffffff', '#637AFF', '#ffffff', '#372CD5'],
@@ -27,97 +27,98 @@ export function Particles({
   gradientRadius = 2.0,
   backgroundColor = '#000000', // Add prop to receive from App.jsx
   transparentBg = false, // Add prop for transparency
-  ...props
+  ...props 
 }) {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-  // Dynamic FBO size for Safari iframes
-  const initialSize = isSafari ? 64 : size
-  const [fboSize, setFboSize] = useState(initialSize)
-
+  
   const simRef = useRef()
   const renderRef = useRef()
   const frameCount = useRef(0);
-  const { gl } = useThree()
 
   //delay start
   const [ready, setReady] = useState(false);
-
+  
   // Set up FBO scene
   const [scene] = useState(() => new THREE.Scene())
   const [camera] = useState(() => new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1))
   const [positions] = useState(() => new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0]))
   const [uvs] = useState(() => new Float32Array([0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0]))
-
-  // const target = useFBO(size, size, {
-  //   minFilter: THREE.NearestFilter,
-  //   magFilter: THREE.NearestFilter,
-  //   format: THREE.RGBAFormat,
-  //   stencilBuffer: false,
-  //   type: THREE.FloatType
-  // })
-
-  // Main FBO
-  const target = useFBO(fboSize, fboSize, {
-    minFilter: THREE.NearestFilter,
-    magFilter: THREE.NearestFilter,
-    format: THREE.RGBAFormat,
-    stencilBuffer: false,
-    type: THREE.FloatType,
-    texture: new THREE.DataTexture(
-      new Float32Array(fboSize * fboSize * 4).fill(0),
-      fboSize,
-      fboSize,
-      THREE.RGBAFormat,
-      THREE.FloatType
-    )
-  })
-
-  // Tiny FBO for shader precompilation
-  const precompileFBO = useFBO(4, 4, {
+  
+  const target = useFBO(size, size, {
     minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter,
     format: THREE.RGBAFormat,
     stencilBuffer: false,
     type: THREE.FloatType
   })
+  
+  // Generate particle positions as UV coordinates
+  const particles = useMemo(() => {
+    const length = size * size
+    const particles = new Float32Array(length * 3)
+    
+    for (let i = 0; i < length; i++) {
+      const i3 = i * 3
+      particles[i3 + 0] = (i % size) / size      // u coordinate
+      particles[i3 + 1] = Math.floor(i / size) / size  // v coordinate  
+      particles[i3 + 2] = 0                      // z = 0
+    }
 
-  // Precompile shaders on mount
-  useEffect(() => {
+    return particles
+  }, [size])
+  
+  // Convert gradient colors to uniform format
+  const gradientData = useMemo(() => {
+    const colors = gradientColors.map(color => {
+      const rgb = hexToRgb(color);
+      return [rgb.r, rgb.g, rgb.b];
+    });
+    
+    return {
+      colors: new Float32Array(colors.flat()),
+      stops: new Float32Array(gradientStops)
+    };
+  }, [gradientColors, gradientStops]);
+  
+  // Update simulation every frame
+  useFrame(({ gl, clock }) => {
+    if (ready === false) {
+      console.log('not yet ready')
+      return
+    }
+    frameCount.current++;
+    if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
     if (!simRef.current || !renderRef.current) return
-    const tempScene = new THREE.Scene()
-    const tempMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
-      new THREE.ShaderMaterial({
-        vertexShader: simRef.current.vertexShader,
-        fragmentShader: simRef.current.fragmentShader,
-        uniforms: { ...simRef.current.uniforms }
-      })
-    )
-    tempScene.add(tempMesh)
-    gl.setRenderTarget(precompileFBO)
+    
+    // Render simulation to FBO
+    gl.setRenderTarget(target)
     gl.clear()
-    gl.render(tempScene, camera)
-    // Precompile DepthOfFieldMaterial
-    tempMesh.material = new THREE.ShaderMaterial({
-      vertexShader: renderRef.current.vertexShader,
-      fragmentShader: renderRef.current.fragmentShader,
-      uniforms: { ...renderRef.current.uniforms }
-    })
-    gl.render(tempScene, camera)
+    gl.render(scene, camera)
     gl.setRenderTarget(null)
-  }, [gl, camera])
+    
+    // Update render material
+    renderRef.current.uniforms.positions.value = target.texture
+    renderRef.current.uniforms.uFocus.value = focus
+    renderRef.current.uniforms.uFov.value = fov
+    renderRef.current.uniforms.uBlur.value = blur
+    renderRef.current.uniforms.uGradientColors.value = gradientData.colors
+    renderRef.current.uniforms.uGradientStops.value = gradientData.stops
+    renderRef.current.uniforms.uGradientRadius.value = gradientRadius
+    // In Particles.jsx -> useFrame
+    renderRef.current.uniforms.uTime.value = clock.elapsedTime;
+    
+    // Update simulation material
+    simRef.current.uniforms.uTime.value = clock.elapsedTime * speedFactor
+    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(
+      simRef.current.uniforms.uFrequency.value, 
+      frequency, 
+      0.1
+    )
+  })
 
-  // Delay initial render and scale FBO size
-  useEffect(() => {
-    setTimeout(() => {
-      setReady(true)
-      if (isSafari) {
-        setFboSize(size) // Scale to full size after 1s
-      }
-    }, 500)
-  }, [size, isSafari])
+  //delay start
+  useEffect(() => { setTimeout(() => setReady(true), 500); }, []);
 
   // Set canvas background immediately
   useEffect(() => {
@@ -130,76 +131,7 @@ export function Particles({
       }
     }
   }, [backgroundColor, transparentBg])
-
-
-
-
-
-
-  // Generate particle positions as UV coordinates
-  const particles = useMemo(() => {
-    const length = size * size
-    const particles = new Float32Array(length * 3)
-
-    for (let i = 0; i < length; i++) {
-      const i3 = i * 3
-      particles[i3 + 0] = (i % size) / size      // u coordinate
-      particles[i3 + 1] = Math.floor(i / size) / size  // v coordinate  
-      particles[i3 + 2] = 0                      // z = 0
-    }
-
-    return particles
-  }, [size])
-
-  // Convert gradient colors to uniform format
-  const gradientData = useMemo(() => {
-    const colors = gradientColors.map(color => {
-      const rgb = hexToRgb(color);
-      return [rgb.r, rgb.g, rgb.b];
-    });
-
-    return {
-      colors: new Float32Array(colors.flat()),
-      stops: new Float32Array(gradientStops)
-    };
-  }, [gradientColors, gradientStops]);
-
-  // Update simulation every frame
-  useFrame(({ gl, clock }) => {
-    if (ready === false) {
-      console.log('not yet ready')
-      return
-    }
-    frameCount.current++;
-    if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
-    if (!simRef.current || !renderRef.current) return
-
-    // Render simulation to FBO
-    gl.setRenderTarget(target)
-    gl.clear()
-    gl.render(scene, camera)
-    gl.setRenderTarget(null)
-
-    // Update render material
-    renderRef.current.uniforms.positions.value = target.texture
-    renderRef.current.uniforms.uFocus.value = focus
-    renderRef.current.uniforms.uFov.value = fov
-    renderRef.current.uniforms.uBlur.value = blur
-    renderRef.current.uniforms.uGradientColors.value = gradientData.colors
-    renderRef.current.uniforms.uGradientStops.value = gradientData.stops
-    renderRef.current.uniforms.uGradientRadius.value = gradientRadius
-    // In Particles.jsx -> useFrame
-    renderRef.current.uniforms.uTime.value = clock.elapsedTime;
-
-    // Update simulation material
-    simRef.current.uniforms.uTime.value = clock.elapsedTime * speedFactor
-    simRef.current.uniforms.uFrequency.value = THREE.MathUtils.lerp(
-      simRef.current.uniforms.uFrequency.value,
-      frequency,
-      0.1
-    )
-  })
-
+  
   return (
     <>
       {/* Simulation mesh rendered to FBO */}
@@ -213,7 +145,7 @@ export function Particles({
         </mesh>,
         scene
       )}
-
+      
       {/* Points using FBO texture for positions */}
       {ready && (
         <points {...props}>
