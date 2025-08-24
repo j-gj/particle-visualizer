@@ -27,11 +27,13 @@ export function Particles({
   gradientRadius = 2.0,
   ...props 
 }) {
-  // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   // const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
   // console.log('agent', navigator.userAgent, 'size', size)
   const simRef = useRef()
   const renderRef = useRef()
+  const frameCount = useRef(0);
   
   // Set up FBO scene
   const [scene] = useState(() => new THREE.Scene())
@@ -77,6 +79,8 @@ export function Particles({
   
   // Update simulation every frame
   useFrame(({ gl, clock }) => {
+    frameCount.current++;
+    if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
     if (!simRef.current || !renderRef.current) return
     
     // Render simulation to FBO
