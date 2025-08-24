@@ -206,8 +206,9 @@ class SimulationMaterial extends THREE.ShaderMaterial {
           pos = curlNoise(pos * uFrequency + time);
           curlPos = curlNoise(curlPos * uFrequency + time);
           curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
+          // Remove highest octaves: minor detail loss
           // curlPos += curlNoise(curlPos * uFrequency * 4.0) * 0.25;
-          // Remove highest octave: saves 3 snoise calls, minor detail loss
+          // curlPos += curlNoise(curlPos * uFrequency * 8.0) * 0.125;
 
           // Replace cnoise with snoise for faster mix (adjust scale if needed)
           gl_FragColor = vec4(mix(pos, curlPos, snoise(pos + time) * 0.5 + 0.5), 1.0); // *0.5+0.5 for [0,1] range
