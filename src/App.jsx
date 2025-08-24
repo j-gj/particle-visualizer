@@ -22,7 +22,7 @@ export default function App() {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   const safariSizes = isMobile ? 128 : 256
-  const otherBrowserSizes = isMobile ? 128 : 384
+  const otherBrowserSizes = isMobile ? 128 : 300
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
   const shouldRotate = isSafari ? false : true;
   console.log('isSafari', isSafari, 'actualSize', actualSize)

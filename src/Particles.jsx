@@ -29,11 +29,13 @@ export function Particles({
 }) {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  // const actualSize = isMobile ? 128 : size  // Use less on mobile, otherwise use prop
-  // console.log('agent', navigator.userAgent, 'size', size)
+  
   const simRef = useRef()
   const renderRef = useRef()
   const frameCount = useRef(0);
+
+  //delay start
+  const [ready, setReady] = useState(false);
   
   // Set up FBO scene
   const [scene] = useState(() => new THREE.Scene())
@@ -79,6 +81,10 @@ export function Particles({
   
   // Update simulation every frame
   useFrame(({ gl, clock }) => {
+    if (ready === false) {
+      console.log('not yet ready')
+      return
+    }
     frameCount.current++;
     if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
     if (!simRef.current || !renderRef.current) return
@@ -108,6 +114,9 @@ export function Particles({
       0.1
     )
   })
+
+  //delay start
+  useEffect(() => { setTimeout(() => setReady(true), 500); }, []);
   
   return (
     <>
