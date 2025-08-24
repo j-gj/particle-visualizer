@@ -122,6 +122,22 @@ export default function App() {
     }
   })
 
+  // Simulate rotation to trigger Safari prioritization?
+  useEffect(() => {
+    if (controlsRef.current && isSafari) {
+      // Store initial angles
+      const initialAzimuth = controlsRef.current.getAzimuthalAngle()
+      // Simulate small horizontal rotation
+      controlsRef.current.setAzimuthalAngle(initialAzimuth + 0.1)
+      controlsRef.current.update()
+      // Reset after 100ms
+      setTimeout(() => {
+        controlsRef.current.setAzimuthalAngle(initialAzimuth)
+        controlsRef.current.update()
+      }, 100)
+    }
+  }, [isSafari]);
+
   // Handle background color for transparent mode
   useEffect(() => {
     if (transparentBg) {
@@ -141,20 +157,6 @@ export default function App() {
   useEffect(() => {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
-
-
-  useEffect(() => {
-    if (controlsRef.current && isSafari) {
-      // Simulate a brief rotation
-      controlsRef.current.rotate(1, 0.0); // Small horizontal rotation
-      controlsRef.current.update();
-      // Reset after a short delay to avoid continuous motion
-      setTimeout(() => {
-        controlsRef.current.rotate(-1, 0.0);
-        controlsRef.current.update();
-      }, 100);
-    }
-  }, [isSafari]);
 
   return (
     <>
