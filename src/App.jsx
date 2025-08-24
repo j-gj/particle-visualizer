@@ -142,6 +142,20 @@ export default function App() {
     camera.position.set(0, 0, initialCameraZ)
   }, [initialCameraZ, camera])
 
+
+  useEffect(() => {
+    if (controlsRef.current && isSafari) {
+      // Simulate a brief rotation
+      controlsRef.current.rotate(1, 0.0); // Small horizontal rotation
+      controlsRef.current.update();
+      // Reset after a short delay to avoid continuous motion
+      setTimeout(() => {
+        controlsRef.current.rotate(-1, 0.0);
+        controlsRef.current.update();
+      }, 100);
+    }
+  }, [isSafari]);
+
   return (
     <>
       <OrbitControls

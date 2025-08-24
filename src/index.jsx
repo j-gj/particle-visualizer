@@ -1,23 +1,12 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas } from '@react-three/fiber'
-import { useEffect } from 'react'
 import App from './App.jsx'
 
 // Create the root for React DOM
 const root = createRoot(document.getElementById('root'))
 
 function CanvasApp() {
-  useEffect(() => {
-    const canvas = document.querySelector('canvas');
-    if (canvas) {
-      canvas.focus();
-      console.log('mouse focus event')
-      // Dispatch a synthetic mouse event
-      const event = new MouseEvent('mousedown', { bubbles: true });
-      canvas.dispatchEvent(event);
-    }
-  }, []);
   return (
     <Canvas
       // Camera settings
