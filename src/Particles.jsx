@@ -88,7 +88,8 @@ export function Particles({
       return
     }
     frameCount.current++;
-    if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
+    //skip frame
+    // if ((isSafari || isMobile) && frameCount.current % 2 === 0) return;
     if (!simRef.current || !renderRef.current) return
     
     // Render simulation to FBO

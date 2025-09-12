@@ -21,10 +21,10 @@ export default function App() {
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const safariSizes = isMobile ? 128 : 256
-  const otherBrowserSizes = isMobile ? 128 : 300
+  const safariSizes = isMobile ? 128 : 320
+  const otherBrowserSizes = isMobile ? 128 : 400
   const actualSize = isSafari ? safariSizes : otherBrowserSizes  // Use less on mobile, otherwise use prop
-  const shouldRotate = isSafari ? false : true;
+  const shouldRotate = isSafari ? true : true;
   console.log('isSafari', isSafari, 'actualSize', actualSize)
   // Determine vertical rotation: URL param takes priority, otherwise auto-detect based on device
   const enableVRotation = rotationVerticalParam !== null
@@ -38,8 +38,8 @@ export default function App() {
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
 
   // Only show controls in development
-  const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
-  // const isDev = 'true'
+  // const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+  const isDev = 'true'
   const controlValues = isDev ? useControls({
     frequency: { value: density, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
@@ -52,10 +52,10 @@ export default function App() {
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
     // Gradient controls
-    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#99A6F0' },
-    gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637AFF' },
-    gradientColor3: { value: formatHexColor(gc3FromUrl) || '#372CD5' },
-    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#070245' },
+    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#372cd5' },
+    gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637aff' },
+    gradientColor3: { value: formatHexColor(gc3FromUrl) || '#1e10e2' },
+    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#050033' },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
@@ -68,14 +68,14 @@ export default function App() {
     fov: 35,
     blur: 24,
     focus: 8.7,
-    backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#000000'),
+    backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff'),
     initialCameraZ: 7.6,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
-    gradientColor1: formatHexColor(gc1FromUrl) || '#F0F4FF',
-    gradientColor2: formatHexColor(gc2FromUrl) || '#637AFF',
-    gradientColor3: formatHexColor(gc3FromUrl) || '#372CD5',
-    gradientColor4: formatHexColor(gc4FromUrl) || '#F0F4FF',
+    gradientColor1: formatHexColor(gc1FromUrl) || '#372cd5',
+    gradientColor2: formatHexColor(gc2FromUrl) || '#637aff',
+    gradientColor3: formatHexColor(gc3FromUrl) || '#1e10e2',
+    gradientColor4: formatHexColor(gc4FromUrl) || '#050033',
     gradientStop1: 0.6,
     gradientStop2: 0.65,
     gradientStop3: 0.75,
@@ -113,9 +113,9 @@ export default function App() {
   useFrame((state, delta) => {
     frameCount.current++;
     // Skip frames on Safari in iframe to reduce load
-    if (isSafari && frameCount.current % 2 === 0) {
-      return; // Skip every other frame
-    }
+    // if (isSafari && frameCount.current % 2 === 0) {
+    //   return; // Skip every other frame
+    // }
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
       controlsRef.current.update(delta)
