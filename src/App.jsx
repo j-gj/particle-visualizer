@@ -39,6 +39,17 @@ export default function App() {
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 1
   const particlesOverride = particlesFromUrl ? parseFloat(particlesFromUrl) : actualSize
 
+  const colorOptions = {
+    White: "#fff",
+    Black: "#000",
+    Brand_Primary: "#372CD5",
+    Brand_Secondary: "#637AFF",
+    Brand_Tertiary: "#050033",
+    Accent1: "#F0F4FF",
+    Accent2: "#1607ED",
+    Accent3: "#9FADED"
+  }
+
   // Only show controls in development
   // const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const isDev = 'true'
@@ -52,12 +63,12 @@ export default function App() {
     // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
-    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff') },
+    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff'), options: colorOptions, type: "color" },
     // Gradient controls
-    gradient1: { value: formatHexColor(gc1FromUrl) || '#372cd5' },
-    gradient2: { value: formatHexColor(gc2FromUrl) || '#637aff' },
-    gradient3: { value: formatHexColor(gc3FromUrl) || '#1e10e2' },
-    gradient4: { value: formatHexColor(gc4FromUrl) || '#050033' },
+    gradient1: { value: formatHexColor(gc1FromUrl) || '#372cd5', options: colorOptions, type: "color" },
+    gradient2: { value: formatHexColor(gc2FromUrl) || '#637aff', options: colorOptions, type: "color" },
+    gradient3: { value: formatHexColor(gc3FromUrl) || '#1e10e2', options: colorOptions, type: "color" },
+    gradient4: { value: formatHexColor(gc4FromUrl) || '#050033', options: colorOptions, type: "color" },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
