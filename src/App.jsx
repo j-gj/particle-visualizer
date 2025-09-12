@@ -36,7 +36,7 @@ export default function App() {
   const formatHexColor = (color) => color ? `#${color}` : null
   const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
   const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
-  const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
+  const speed = speedFromUrl ? parseFloat(speedFromUrl) : 1
   const particlesOverride = particlesFromUrl ? parseFloat(particlesFromUrl) : actualSize
 
   // Only show controls in development
@@ -48,7 +48,7 @@ export default function App() {
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 24, min: 0, max: 50, step: 0.1 },
     focus: { value: 6.7, min: 3, max: 10, step: 0.01 },
-    initialCameraZ: { value: 6, min: 0.5, max: 15, step: 0.1 },
+    cameraZ: { value: 6, min: 0.5, max: 15, step: 0.1 },
     // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
@@ -70,7 +70,7 @@ export default function App() {
     fov: 35,
     blur: 24,
     focus: 6.7,
-    initialCameraZ: 6,
+    cameraZ: 6,
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff'),
@@ -91,7 +91,7 @@ export default function App() {
     fov,
     blur,
     focus,
-    initialCameraZ,
+    cameraZ,
     rotationSpeed,
     enableVerticalRotation,
     backgroundColor,
@@ -139,10 +139,10 @@ export default function App() {
     }
   }, [backgroundColor, transparentBg])
 
-  // Update camera position when initialCameraZ changes
+  // Update camera position when cameraZ changes
   useEffect(() => {
-    camera.position.set(0, 0, initialCameraZ)
-  }, [initialCameraZ, camera])
+    camera.position.set(0, 0, cameraZ)
+  }, [cameraZ, camera])
 
   return (
     <>
