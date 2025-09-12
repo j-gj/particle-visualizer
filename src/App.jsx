@@ -35,7 +35,7 @@ export default function App() {
   // Helper function to add # to hex colors
   const formatHexColor = (color) => color ? `#${color}` : null
   const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
-  const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
+  const d = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 1
   const particlesOverride = particlesFromUrl ? parseFloat(particlesFromUrl) : actualSize
 
@@ -43,7 +43,7 @@ export default function App() {
   // const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const isDev = 'true'
   const controlValues = isDev ? useControls({
-    frequency: { value: density, min: 0, max: 1, step: 0.001 },
+    density: { value: d, min: 0, max: 1, step: 0.001 },
     speedFactor: { value: speed, min: 0.1, max: 100, step: 0.1 },
     fov: { value: 35, min: 0, max: 200 },
     blur: { value: 24, min: 0, max: 50, step: 0.1 },
@@ -54,10 +54,10 @@ export default function App() {
     enableVerticalRotation: { value: enableVRotation },
     backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff') },
     // Gradient controls
-    gradientColor1: { value: formatHexColor(gc1FromUrl) || '#372cd5' },
-    gradientColor2: { value: formatHexColor(gc2FromUrl) || '#637aff' },
-    gradientColor3: { value: formatHexColor(gc3FromUrl) || '#1e10e2' },
-    gradientColor4: { value: formatHexColor(gc4FromUrl) || '#050033' },
+    gradient1: { value: formatHexColor(gc1FromUrl) || '#372cd5' },
+    gradient2: { value: formatHexColor(gc2FromUrl) || '#637aff' },
+    gradient3: { value: formatHexColor(gc3FromUrl) || '#1e10e2' },
+    gradient4: { value: formatHexColor(gc4FromUrl) || '#050033' },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
@@ -65,7 +65,7 @@ export default function App() {
     gradientRadius: { value: 1.35, min: 1.35, max: 2, step: 0.01 }
   }) : {
     // Default values for production
-    frequency: density,
+    density: d,
     speedFactor: speed,
     fov: 35,
     blur: 24,
@@ -74,10 +74,10 @@ export default function App() {
     rotationSpeed: rotation,
     enableVerticalRotation: enableVRotation,
     backgroundColor: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff'),
-    gradientColor1: formatHexColor(gc1FromUrl) || '#372cd5',
-    gradientColor2: formatHexColor(gc2FromUrl) || '#637aff',
-    gradientColor3: formatHexColor(gc3FromUrl) || '#1e10e2',
-    gradientColor4: formatHexColor(gc4FromUrl) || '#050033',
+    gradient1: formatHexColor(gc1FromUrl) || '#372cd5',
+    gradient2: formatHexColor(gc2FromUrl) || '#637aff',
+    gradient3: formatHexColor(gc3FromUrl) || '#1e10e2',
+    gradient4: formatHexColor(gc4FromUrl) || '#050033',
     gradientStop1: 0.6,
     gradientStop2: 0.65,
     gradientStop3: 0.75,
@@ -86,7 +86,7 @@ export default function App() {
   }
 
   const {
-    frequency,
+    density,
     speedFactor,
     fov,
     blur,
@@ -96,10 +96,10 @@ export default function App() {
     enableVerticalRotation,
     backgroundColor,
     // New gradient controls
-    gradientColor1,
-    gradientColor2,
-    gradientColor3,
-    gradientColor4,
+    gradient1,
+    gradient2,
+    gradient3,
+    gradient4,
     gradientStop1,
     gradientStop2,
     gradientStop3,
@@ -160,7 +160,7 @@ export default function App() {
       />
       <ambientLight />
       <Particles
-        frequency={frequency}
+        density={density}
         speedFactor={speedFactor}
         fov={fov}
         blur={blur}
@@ -168,7 +168,7 @@ export default function App() {
         position={[0, 0, 0]}
         size={particlesOverride}
         // Pass gradient props
-        gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
+        gradientColors={[gradient1, gradient2, gradient3, gradient4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
         gradientRadius={gradientRadius}
         backgroundColor={backgroundColor}
