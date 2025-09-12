@@ -160,7 +160,7 @@ export default function App() {
       />
       <ambientLight />
       <Particles
-        density={density}
+        frequency={density}
         speedFactor={speedFactor}
         fov={fov}
         blur={blur}
