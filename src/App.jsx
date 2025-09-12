@@ -17,6 +17,7 @@ export default function App() {
   const rotationFromUrl = urlParams.get('r')
   const transparentBg = urlParams.get('transparent') === 'true'
   const rotationVerticalParam = urlParams.get('rotationVertical')
+  const particlesFromUrl = urlParams.get('particles')
 
   // Detect if device is mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -36,6 +37,7 @@ export default function App() {
   const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
   const density = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 4
+  const particlesOverride = particlesFromUrl ? parseFloat(particlesFromUrl) : actualSize
 
   // Only show controls in development
   // const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -164,7 +166,7 @@ export default function App() {
         blur={blur}
         focus={focus}
         position={[0, 0, 0]}
-        size={actualSize}
+        size={particlesOverride}
         // Pass gradient props
         gradientColors={[gradientColor1, gradientColor2, gradientColor3, gradientColor4]}
         gradientStops={[gradientStop1, gradientStop2, gradientStop3, gradientStop4]}
