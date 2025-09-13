@@ -33,15 +33,28 @@ export default function App() {
     : !isMobile // Enable on desktop by default, disable on mobile
 
   // Helper function to add # to hex colors
-  const formatHexColor = (color) => color ? `#${color}` : null
+  const formatHexColor = (color) => {
+    if (!color) return null
+    if (color === 'transparent') return 'transparent'
+
+    let str = color.trim().toLowerCase()
+    if (!str.startsWith('#')) str = `#${str}`
+
+    // Expand shorthand (#fff or #000) to full form
+    if (/^#([0-9a-f]{3})$/i.test(str)) {
+      str = '#' + str.slice(1).split('').map(ch => ch + ch).join('')
+    }
+
+    return str
+  }
   const rotation = rotationFromUrl ? parseFloat(rotationFromUrl) : 0.3
   const d = densityFromUrl ? parseFloat(densityFromUrl) : 0.15
   const speed = speedFromUrl ? parseFloat(speedFromUrl) : 1
   const particlesOverride = particlesFromUrl ? parseFloat(particlesFromUrl) : actualSize
 
   const colorOptions = {
-    White: "#fff",
-    Black: "#000",
+    White: "#ffffff",
+    Black: "#000000",
     Brand_Primary: "#372CD5",
     Brand_Secondary: "#637AFF",
     Brand_Tertiary: "#050033",
@@ -154,26 +167,6 @@ export default function App() {
   useEffect(() => {
     camera.position.set(0, 0, cameraZ)
   }, [cameraZ, camera])
-
-  //make sure controls stay on top
-  useEffect(() => {
-    // try common leva selectors and bump z-index so panel is never covered by canvas
-    const levaSelectors = ['.leva', '.leva__container', '.leva-panel', '.leva__panel']
-    for (const s of levaSelectors) {
-      const node = document.querySelector(s)
-      if (node) {
-        node.style.zIndex = '999999'
-        node.style.position = 'fixed'
-        break
-      }
-    }
-
-    const canvas = document.querySelector('canvas')
-    if (canvas) {
-      canvas.style.position = canvas.style.position || 'relative'
-      canvas.style.zIndex = canvas.style.zIndex || '0'
-    }
-  }, [])
 
   return (
     <>
