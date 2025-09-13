@@ -63,12 +63,12 @@ export default function App() {
     // Add rotation speed control for dev mode
     rotationSpeed: { value: rotation, min: 0, max: 5, step: 0.1 },
     enableVerticalRotation: { value: enableVRotation },
-    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || '#fff'), options: colorOptions },
+    backgroundColor: { value: transparentBg ? 'transparent' : (formatHexColor(bgFromUrl) || colorOptions.White), options: colorOptions },
     // Gradient controls
-    gradient1: { value: formatHexColor(gc1FromUrl) || '#372cd5', options: colorOptions },
-    gradient2: { value: formatHexColor(gc2FromUrl) || '#637aff', options: colorOptions },
-    gradient3: { value: formatHexColor(gc3FromUrl) || '#1e10e2', options: colorOptions },
-    gradient4: { value: formatHexColor(gc4FromUrl) || '#050033', options: colorOptions },
+    gradient1: { value: formatHexColor(gc1FromUrl) || colorOptions.Accent1, options: colorOptions },
+    gradient2: { value: formatHexColor(gc2FromUrl) || colorOptions.Brand_Primary, options: colorOptions },
+    gradient3: { value: formatHexColor(gc3FromUrl) || colorOptions.Brand_Secondary, options: colorOptions },
+    gradient4: { value: formatHexColor(gc4FromUrl) || colorOptions.Brand_Tertiary, options: colorOptions },
     gradientStop1: { value: 0.6, min: 0, max: 1, step: 0.01 },
     gradientStop2: { value: 0.65, min: 0, max: 1, step: 0.01 },
     gradientStop3: { value: 0.75, min: 0, max: 1, step: 0.01 },
