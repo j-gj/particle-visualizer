@@ -155,6 +155,26 @@ export default function App() {
     camera.position.set(0, 0, cameraZ)
   }, [cameraZ, camera])
 
+  //make sure controls stay on top
+  useEffect(() => {
+    // try common leva selectors and bump z-index so panel is never covered by canvas
+    const levaSelectors = ['.leva', '.leva__container', '.leva-panel', '.leva__panel']
+    for (const s of levaSelectors) {
+      const node = document.querySelector(s)
+      if (node) {
+        node.style.zIndex = '999999'
+        node.style.position = 'fixed'
+        break
+      }
+    }
+
+    const canvas = document.querySelector('canvas')
+    if (canvas) {
+      canvas.style.position = canvas.style.position || 'relative'
+      canvas.style.zIndex = canvas.style.zIndex || '0'
+    }
+  }, [])
+
   return (
     <>
       <OrbitControls
