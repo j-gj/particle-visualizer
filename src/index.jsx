@@ -17,7 +17,7 @@ function CanvasApp() {
 
       // WebGL context settings optimized for Safari iframes
       gl={{
-        alpha: true,
+        alpha: false,
         antialias: true,
         powerPreference: "high-performance",
         // Safari iframe optimizations

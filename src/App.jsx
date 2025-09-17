@@ -131,37 +131,21 @@ export default function App() {
     gradientRadius
   } = controlValues
 
-  const { camera } = useThree() // Get camera reference for position control
+  const { camera, gl } = useThree() // Get camera reference for position control
   const controlsRef = useRef()
-  const frameCount = useRef(0);
 
   // Use useFrame to pass delta time to OrbitControls.update()
   useFrame((state, delta) => {
-    frameCount.current++;
-    // Skip frames on Safari in iframe to reduce load
-    // if (isSafari && frameCount.current % 2 === 0) {
-    //   return; // Skip every other frame
-    // }
     if (controlsRef.current) {
       // Pass delta time to make autoRotate frame-rate independent
       controlsRef.current.update(delta)
     }
   })
 
-  // Handle background color for transparent mode
+  // Handle background color
   useEffect(() => {
-    if (transparentBg) {
-      document.body.style.background = 'transparent'
-      document.body.style.backgroundColor = 'transparent'
-      // Find the canvas and make its container transparent
-      const canvas = document.querySelector('canvas')
-      if (canvas && canvas.parentElement) {
-        canvas.parentElement.style.background = 'transparent'
-      }
-    } else {
-      document.body.style.background = backgroundColor
-    }
-  }, [backgroundColor, transparentBg])
+    gl.setClearColor(backgroundColor)
+  }, [backgroundColor, gl])
 
   // Update camera position when cameraZ changes
   useEffect(() => {
